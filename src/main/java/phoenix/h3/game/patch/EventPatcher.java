@@ -5,6 +5,7 @@ import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.*;
 import phoenix.h3.game.common.CustomMarker;
+import phoenix.h3.game.patch.replacer.Replacer;
 import phoenix.h3.game.patch.replacer.ReplacerRepository;
 import phoenix.h3.game.stdlib.Stack;
 import phoenix.h3.game.stdlib.StdString;
@@ -51,7 +52,6 @@ public class EventPatcher extends Patcher {
         int event = events + eventId * Blackbox.SIZE;
 
         StdString msg = Blackbox.msg(event);
-        dbg("MSG ", msg.toString());
         Vector<Vector<String>> customs = CustomMarker.parseForCustomMarkerAndFixup(msg);
         if (customs == null) {
             return;
@@ -102,5 +102,17 @@ public class EventPatcher extends Patcher {
 
             repository.performReplace(info.tokens, info.x, info.y, info.z, cell, typeAndSubtype,  info.event);
         }
+    }
+
+    @Override
+    public Vector<Patcher> createChildPatches() {
+        Vector<Patcher> r = new Vector<>();
+        for (Replacer replacer : repository.allReplacers()) {
+            Patcher patcher = replacer.asPatcher();
+            if (patcher != null) {
+                r.add(patcher);
+            }
+        }
+        return r;
     }
 }

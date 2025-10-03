@@ -8,6 +8,9 @@ import static phoenix.h3.game.stdlib.Memory.putByte;
 
 public class Hero {
 
+    public static final int OFFSET_SECONDARY_SKILL_LEVELS = 0xC9;
+    public static final int OFFSET_SECONDARY_SKILL_ORDER = 0xE5;
+    public static final int OFFSET_SECONDARY_SKILL_NUM = 0x101;
     public static final int OFFSET_PRIMARY_SKILLS = 0x476;
 
     @Thiscall
