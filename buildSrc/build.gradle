@@ -1,0 +1,19 @@
+plugins {
+    id 'groovy-gradle-plugin'
+    id 'java-library'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    gradlePluginPortal()
+}
+
+dependencies {
+    implementation 'io.github.icedland.iced:iced-x86:1.21.0'
+    implementation 'ar.com.hjg:pngj:2.1.0'
+}
