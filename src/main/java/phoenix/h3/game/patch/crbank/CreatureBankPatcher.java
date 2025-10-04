@@ -4,8 +4,8 @@ import phoenix.h3.game.CreatureBank;
 import phoenix.h3.game.patch.Patcher;
 import phoenix.h3.game.stdlib.StdString;
 
-import static phoenix.h3.game.stdlib.Memory.*;
-import static phoenix.h3.game.stdlib.Memory.putDword;
+import static phoenix.h3.game.stdlib.Memory.mallocAuto;
+import static phoenix.h3.game.stdlib.Memory.putCstr;
 
 public class CreatureBankPatcher extends Patcher {
 
@@ -16,7 +16,7 @@ public class CreatureBankPatcher extends Patcher {
     }
 
     @Override
-    public void onGameCreated() {
+    public void onGameCreated(boolean saveLoad) {
         patchCrBankTable();
     }
 
@@ -27,15 +27,14 @@ public class CreatureBankPatcher extends Patcher {
 
         CreatureBankData[] data = banks.finish();
 
-        int prevFrameArray = dwordAt(ptrCrBankTable);
+        int oldSize = oldCount * recordSize;
+        int newFrameArray = patchArray(ptrCrBankTable, oldSize, (oldCount + data.length) * recordSize);
 
-        int newFrameArray = malloc((oldCount + data.length) * recordSize);
-        memcpy(newFrameArray, prevFrameArray, oldCount * recordSize);
-        putDword(ptrCrBankTable, newFrameArray);
-
-        int ptr = newFrameArray + oldCount * recordSize;
+        int ptr = newFrameArray + oldSize;
         for (CreatureBankData d : data) {
-            StdString.put(ptr, d.name);
+            int cstr = mallocAuto(d.name.length() + 1);
+            putCstr(cstr, d.name);
+            StdString.put(ptr, cstr, d.name.length());
             ptr += recordSize;
         }
     }

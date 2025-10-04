@@ -61,10 +61,16 @@ public class PatchRepository {
         }
     }
 
-    public void onGameCreated() {
+    public void onGameCreated(boolean saveLoad) {
         for (int i = 0, registeredSize = registered.size(); i < registeredSize; i++) {
             Patcher patcher = registered.get(i);
-            patcher.onGameCreated();
+            patcher.onGameCreated(saveLoad);
+        }
+    }
+
+    public void rollbackPatches() {
+        for (int i = registered.size() - 1; i >= 0; i--) {
+            registered.get(i).uninstall();
         }
     }
 }

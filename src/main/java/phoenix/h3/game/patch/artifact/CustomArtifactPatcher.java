@@ -27,8 +27,8 @@ public class CustomArtifactPatcher extends Patcher {
     }
 
     @Override
-    public void onGameCreated() {
-        super.onGameCreated();
+    public void onGameCreated(boolean saveLoad) {
+        super.onGameCreated(saveLoad);
         int artifactDef = loadArtifactDef();
         int[] defsOffsets = preloadDefs();
         for (int i = 0; i < defsOffsets.length; i++) {
@@ -83,10 +83,12 @@ public class CustomArtifactPatcher extends Patcher {
 //        }
 //    }
 
-    private static int loadArtifactDef() {
-        int tmpName = SHARED_TMP_NATIVE_BUFFER + 1024;
+    public static int loadArtifactDef() {
+        int tmpName = malloc(16);
         putCstr(tmpName, "artifact.def");
-        return Def.getByName(tmpName);
+        int artifacts = Def.getByName(tmpName);
+        free(tmpName);
+        return artifacts;
     }
 
     private int[] preloadDefs() {
@@ -104,7 +106,30 @@ public class CustomArtifactPatcher extends Patcher {
     private void patchArtifactsDef(int artifactDef, int[] singleFrameDefs) {
         int oldArtifactsCount = FIRST_CUSTOM_ARTIFACT_ID;
         int totalArtifactsInGame = artifacts.totalArtifactsInGame();
-        Def.patchArtifactsDef(artifactDef, oldArtifactsCount, totalArtifactsInGame, singleFrameDefs);
+        patchArtifactsDef(artifactDef, oldArtifactsCount, totalArtifactsInGame, singleFrameDefs);
+    }
+
+
+    private void patchArtifactsDef(int artifactDef, int oldArtifactsCount, int totalArtifactsInGame, int[] singleFrameDefs) {
+        int prevGroupArray = dwordAt(artifactDef + Def.OFFSET_GROUPS_ARRAY);
+        int prevGroup = dwordAt(prevGroupArray);
+
+        int framesCountAddress = prevGroup + Def.Group.OFFSET_FRAMES_COUNT;
+        int framesMaxCountAddress = prevGroup + Def.Group.OFFSET_MAX_FRAMES_COUNT;
+        int framesAddress = prevGroup + Def.Group.OFFSET_FRAMES;
+
+        patchDword(framesCountAddress, totalArtifactsInGame);
+        patchDword(framesMaxCountAddress, totalArtifactsInGame);
+        int newFrameArray = patchArray(framesAddress, oldArtifactsCount * 4, totalArtifactsInGame * 4);
+
+        int nextFrameAddress = newFrameArray + oldArtifactsCount * 4;
+        for (int i = 0; i < singleFrameDefs.length; i++) {
+            int groups = dwordAt(singleFrameDefs[i] + Def.OFFSET_GROUPS_ARRAY);
+            int group = dwordAt(groups);
+            int frames = dwordAt(group + Def.Group.OFFSET_FRAMES);
+            int frame = dwordAt(frames);
+            putDword(nextFrameAddress + i * 4, frame);
+        }
     }
 
     private void patchArtifactsTable() {
@@ -113,16 +138,14 @@ public class CustomArtifactPatcher extends Patcher {
         int extraSize = artifactRecordSize * customArtifactsCount;
         int oldArtifactsCount = FIRST_CUSTOM_ARTIFACT_ID;
         int oldArtifactsSize = artifactRecordSize * oldArtifactsCount;
-        int oldTable = dwordAt(ARTIFACT_TABLE);
-        int newTable = malloc(oldArtifactsSize + extraSize);
-        memcpy(newTable, oldTable, oldArtifactsSize);
+        int newTable = patchArray(ARTIFACT_TABLE, oldArtifactsSize, oldArtifactsSize + extraSize);
 
         int[] artifactRecord = SHARED_TMP_INT_BUFFER;
         for (int i = 0; i < customArtifactsCount; i++) {
             CustomArtifact artifact = artifacts.artifacts.get(i);
             int bytesForName = artifact.nameText.length() + 1;
             int bytesForDesc = artifact.descText.length() + 1;
-            int nameAndDesc = malloc(bytesForName + bytesForDesc);
+            int nameAndDesc = mallocAuto(bytesForName + bytesForDesc);
             int descOffset = nameAndDesc + bytesForName;
             putCstr(nameAndDesc, artifact.nameText);
             putCstr(descOffset, artifact.descText);

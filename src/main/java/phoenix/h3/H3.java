@@ -4,6 +4,7 @@ import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.GzFile;
 import phoenix.h3.game.patch.*;
+import phoenix.h3.game.stdlib.Memory;
 
 import static phoenix.h3.annotations.R.EDX;
 
@@ -27,12 +28,13 @@ public class H3 {
         new Patcher() {
             @Upcall(base = 0x407740)
             public void cleanup() {
-                dbg("cleanup");
-                // todo rollback patches, mallocs, and writes
+                // well, we uninstall it on the native side, do we really need it?
+                patchRepository.rollbackPatches();
+                Memory.autoFree();
                 System.exit(0);
             }
 
-            @Upcall(base = 0x4BEB60, offset = 0x238)
+            @Upcall(base = 0x4bed98)
             public void writeHeaderOnSave(@R(EDX) int gzFile) {
                 PatchInfo info = new PatchInfo();
                 extractPatchInfo(info);
@@ -42,9 +44,13 @@ public class H3 {
 
             @Upcall(base = 0x4c01a2)
             public void afterGameCreated() {
-                patchRepository.onGameCreated();
+                patchRepository.onGameCreated(false);
             }
 
+            @Upcall(base = 0x4BF1F3)
+            public void afterSaveLoaded() {
+                patchRepository.onGameCreated(true);
+            }
         }.installPatch();
 
         patchRepository = Init.start();

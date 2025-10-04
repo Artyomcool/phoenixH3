@@ -31,13 +31,20 @@ public class NewfullMap {
         return StdVector.dataPtr(map + OFFSET_SPRITES);
     }
 
-    public static int addNewType(int map, int copyFrom, int def) {
+    public static int addNewType(int map, int copyFrom) {
         int pos = StdVector.add(map + OFFSET_OBJECT_TYPES, CObjectType.SIZE);
         memcpy(pos, types(map) + copyFrom * CObjectType.SIZE, CObjectType.SIZE);
+        putDword(pos + 0, 0);
+        putDword(pos + 4, 0);
+        putDword(pos + 8, 0);
+        putDword(pos + 12, 0);
 
         pos = StdVector.add(map + OFFSET_SPRITES, 4);
+        int sprites = sprites(map);
+        int def = dwordAt(sprites + copyFrom * 4);
+        Resource.incRefCount(def);
         putDword(pos, def);
-        return  (pos - sprites(map)) / 4;
+        return  (pos - sprites) / 4;
     }
 
     public static int objects(int map) {
@@ -50,6 +57,11 @@ public class NewfullMap {
 
     public static int cells(int map) {
         return dwordAt(map + OFFSET_CELL_DATA_PTR);
+    }
+
+    public static int cell(int map, int x, int y, int z) {
+        int size = size(map);
+        return cells(map) + (x + y * size + z * size * size) * NewmapCell.SIZE;
     }
 
     public static int size(int map) {

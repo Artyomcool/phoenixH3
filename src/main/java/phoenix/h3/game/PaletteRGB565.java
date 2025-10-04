@@ -4,13 +4,14 @@ import phoenix.h3.annotations.Downcall;
 import phoenix.h3.annotations.Thiscall;
 
 import static phoenix.h3.game.stdlib.Memory.malloc;
+import static phoenix.h3.game.stdlib.Memory.mallocAuto;
 
 public class PaletteRGB565 {
 
     public static final int SIZE = 0x21C;
 
     public static int allocate() {
-        return malloc(SIZE);
+        return mallocAuto(SIZE);
     }
 
     public static int createNewFromPalette888(int palette888) {

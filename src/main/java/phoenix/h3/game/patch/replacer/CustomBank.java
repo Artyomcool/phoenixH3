@@ -3,10 +3,10 @@ package phoenix.h3.game.patch.replacer;
 import phoenix.h3.game.*;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
 import phoenix.h3.game.patch.crbank.CreatureBankRepository;
+import phoenix.h3.game.stdlib.Memory;
 import phoenix.h3.game.stdlib.StdVector;
 
 import static phoenix.h3.game.stdlib.Memory.*;
-import static phoenix.h3.game.stdlib.Memory.dwordAt;
 
 public class CustomBank extends Replacer {
 
@@ -54,7 +54,11 @@ public class CustomBank extends Replacer {
                 );
             } else if (token.startsWith(DEF)) {
                 int type = CObject.type(object);
-                int index = NewfullMap.addNewType(map, type, Def.loadFromJar(token.substring(DEF.length())));
+                int index = NewfullMap.addNewType(map, type);
+                int newDef = Def.loadFromJar(token.substring(DEF.length()));
+                int address = NewfullMap.sprites(map) + index * 4;
+                Memory.registerDwordPatch(address);
+                putDword(address, newDef);
 
                 putByte(object + CObject.OFFSET_TYPE_ID, index & 0xff);
                 putByte(object + CObject.OFFSET_TYPE_ID + 1, (index >> 8) & 0xff);

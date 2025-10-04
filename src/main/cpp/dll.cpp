@@ -205,6 +205,7 @@ struct Trampoline {
     UINT8 bridge[256];
     int orig_len;
     jobject global_ref = NULL;
+    Trampoline* next = NULL;
 
     ~Trampoline() {
         free(orig);
@@ -330,10 +331,9 @@ int put_patch(void* to, void* from, int count) {
     return 1;
 }
 
-int remove_inline_hook(Trampoline* hk) {
+void remove_inline_hook(Trampoline* hk) {
     put_patch(hk->src, hk->orig, hk->orig_len);
     delete hk;
-    return 1;
 }
 
 bool PASSWORD_CORRECT = false;
@@ -563,10 +563,23 @@ int call_regs_raw_intel(void* fn, int ecx_val, int edx_val,
     return r;
 }
 
+Trampoline* trampoline = NULL;
+
 int downcall_depth = 0;
 int downcall_stack_pointer[1024];
 int lastGuardSignal = -1;
 int lastPushedGuard = -1;
+bool DONE = false;
+
+void cleanup() {
+    DONE = true;
+    while (trampoline != NULL) {
+        Trampoline* next = trampoline->next;
+        remove_inline_hook(trampoline);
+        trampoline = next;
+    }
+    JVM_CleanUp();
+}
 
 __attribute__((__fastcall__))
 int JVMPatchHook(int data, int stack_pointer) {
@@ -594,7 +607,13 @@ int JVMPatchHook(int data, int stack_pointer) {
     }
 
     while (upcall != u) {
+        if (DONE) {
+            return 0;
+        }
         jlong r = JVM_TimeSlice();
+        if (DONE) {
+            return 0;
+        }
         if (downcall_address != -1) {
             int t = downcall_type;
             downcall_type = 0;
@@ -628,17 +647,17 @@ int JVMPatchHook(int data, int stack_pointer) {
         }
         if (r == -2) {
             DBG("AFTER MAIN FINISHED??");
-            JVM_CleanUp();
+            cleanup();
             return 0;
         }
         if (r == -1) {
             DBG("Can't make upcall, it's waiting for something))");
-            JVM_CleanUp();
+            cleanup();
             return 0;
         }
         if (r > 0) {
             DBG("Sleep in upcall? Nope, I don't think so! %x", r);
-            JVM_CleanUp();
+            cleanup();
             return 0;
         }
     }
@@ -885,7 +904,9 @@ KNIDECL(Patcher_performPatchInstallation) {
         void* data = (void*)codegen::emit_bind_params_fastcall(globalPatcher, i, params);
         DBG("Installed: %s/%d", className(patcherClass));
         //todo - before/after
-        install_inline_hook((void*)(upcall.base + upcall.offset), (void*)&JVMPatchHook, (int)data, true);
+        auto* t = install_inline_hook((void*)(upcall.base + upcall.offset), (void*)&JVMPatchHook, (int)data, true);
+        t->next = trampoline;
+        trampoline = t;
     }
 
     _jni_env.PopLocalFrame(NULL);

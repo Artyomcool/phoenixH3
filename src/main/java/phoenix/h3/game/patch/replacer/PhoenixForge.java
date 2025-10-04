@@ -4,6 +4,7 @@ import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.Hero;
+import phoenix.h3.game.patch.PatchRepository;
 import phoenix.h3.game.patch.Patcher;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
 import phoenix.h3.game.patch.crbank.CreatureBankRepository;

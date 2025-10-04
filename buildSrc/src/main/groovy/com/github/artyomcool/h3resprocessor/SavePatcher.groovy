@@ -365,7 +365,12 @@ class SavePatcher {
             jmp eax
 
         }
-        byte[] bytes = specialNewMap
+
+        def stream = Thread.currentThread().contextClassLoader.getResourceAsStream("special.GM1")
+        if (stream == null) {
+            throw new IllegalStateException("Can't load special.GM1")
+        }
+        byte[] bytes = new GZIPInputStream(stream).bytes
         byte[] patchedHeader = createPatch(bytes)
 
         new Replacer(specialNewMap).tap {

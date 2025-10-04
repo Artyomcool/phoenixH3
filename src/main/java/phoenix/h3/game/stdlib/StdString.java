@@ -15,20 +15,11 @@ public class StdString {
     public int length;
     public int capacity;
 
-    public static void put(int ptr, String name) {
-        int len = name.length();
-        int chars = malloc(len + 1);
-        BUFFER[1] = chars;
+    public static void put(int ptr, int cStr, int len) {
+        BUFFER[1] = cStr;
         BUFFER[2] = len;
         BUFFER[3] = len;
 
-        byte[] bytes = SHARED_TMP_BYTE_BUFFER;
-        for (int i = 0; i < name.length(); i++) {
-            bytes[i] = (byte) name.charAt(i);
-        }
-        bytes[len] = 0;
-
-        putArray(chars, bytes, 0, len + 1);
         putArray(ptr, BUFFER, 0, 16);
     }
 

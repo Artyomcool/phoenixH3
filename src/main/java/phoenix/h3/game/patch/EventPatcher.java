@@ -12,7 +12,6 @@ import phoenix.h3.game.stdlib.StdString;
 
 import java.util.Vector;
 
-import static phoenix.h3.H3.dbg;
 import static phoenix.h3.annotations.R.EBP;
 import static phoenix.h3.annotations.R.ESP;
 
@@ -77,7 +76,7 @@ public class EventPatcher extends Patcher {
     }
 
     @Override
-    public void onGameCreated() {
+    public void onGameCreated(boolean saveLoad) {
         int game = Game.instance();
         int map = Game.map(game);
         int cells = NewfullMap.cells(map);

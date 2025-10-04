@@ -21,7 +21,7 @@ public class Def extends Resource {
     public static final int OFFSET_PALETTE_RGB888 = 0x24;
 
     public static int createNew(int name, int type, int width, int height) {
-        int malloc = malloc(SIZE);
+        int malloc = mallocAuto(SIZE);
         create(malloc, name, type, width, height);
         return malloc;
     }
@@ -63,9 +63,10 @@ public class Def extends Resource {
         int height = stream.nextIntLE();
         int groupsCount = stream.nextIntLE();
 
-        int tmpBuffer = SHARED_TMP_NATIVE_BUFFER;
+        int tmpBuffer = malloc(name.length() + 1);
         putCstr(tmpBuffer, name);
         int def = Def.createNew(tmpBuffer, type, width, height);
+        free(tmpBuffer);
         putDword(def + OFFSET_REF_COUNT, Integer.MAX_VALUE / 2); // "infinite" ref count
 
         int groupsArray = dwordAt(def + OFFSET_GROUPS_ARRAY);
@@ -86,14 +87,11 @@ public class Def extends Resource {
             PaletteRGB888.adjustHsv(palette888, -1f, -1f, 1.5f, 1.2f);
         }
 
-        dbg("Before PaletteRGB565.createNewFromPalette888");
         int palette16 = PaletteRGB565.createNewFromPalette888(palette888);
-        dbg("After PaletteRGB565.createNewFromPalette888");
         putDword(def + OFFSET_PALETTE_RGB565, palette16);
 
         Hashtable<Integer, Integer> loadedFrames = new Hashtable<>();
         for (int i = 0; i < groupsCount; i++) { // groups already allocated by type
-            dbg("Groups loop ", i);
             int groupIndex = stream.nextIntLE();
             int framesCount = stream.nextIntLE();
             stream.pos += 8; // skip unknown 8 bytes
@@ -103,11 +101,10 @@ public class Def extends Resource {
             putDword(groupsArray + groupIndex * 4, group);
             putDword(groupsExistArray + groupIndex * 4, 1);
 
-            int framesArray = malloc(4 * framesCount);
+            int framesArray = mallocAuto(4 * framesCount);
             putDword(group + Group.OFFSET_FRAMES, framesArray);
 
             for (int j = 0; j < framesCount; j++) {
-                dbg("Frames loop ", j);
                 int nameBytesPos = stream.pos;
                 stream.pos += 13;
                 int frameOffset = stream.nextIntLE();
@@ -125,13 +122,12 @@ public class Def extends Resource {
                     int offsetX = stream.nextIntLE();
                     int offsetY = stream.nextIntLE();
 
-                    dbg("load frame ", Integer.toHexString(frameOffset), " ", Integer.toHexString(size), " ", compressionType, " ", fullWidth, " ", fullHeight, " ", w, " ", h, " ", offsetX, " ", offsetY);
-
-                    int data = malloc(size);
+                    int data = mallocAuto(size);
                     putArray(data, buf, stream.pos, size);
-                    putArray(tmpBuffer, buf, nameBytesPos, 13);
+                    int tb = malloc(13);
+                    putArray(tb, buf, nameBytesPos, 13);
                     frame = Def.Frame.createNew(
-                            tmpBuffer,
+                            tb,
                             fullWidth,
                             fullHeight,
                             data,
@@ -142,6 +138,7 @@ public class Def extends Resource {
                             offsetX,
                             offsetY
                     );
+                    free(tb);
                     putDword(frame + Frame.OFFSET_REF_COUNT, Integer.MAX_VALUE / 2); // "infinite" ref count
 
                     loadedFrames.put(frameOffset, frame);
@@ -155,33 +152,6 @@ public class Def extends Resource {
         return def;
     }
 
-    public static void patchArtifactsDef(int artifactDef, int oldArtifactsCount, int totalArtifactsInGame, int[] singleFrameDefs) {
-        int prevGroupArray = dwordAt(artifactDef + 0x1C);
-        int prevGroup = dwordAt(prevGroupArray);
-
-        int framesCountAddress = prevGroup + 0;
-        int framesMaxCountAddress = prevGroup + 4;
-        int framesAddress = prevGroup + 8;
-
-        putDword(framesCountAddress, totalArtifactsInGame);
-        putDword(framesMaxCountAddress, totalArtifactsInGame);
-
-        int prevFrameArray = dwordAt(framesAddress);
-
-        int newFrameArray = malloc(totalArtifactsInGame * 4);
-        memcpy(newFrameArray, prevFrameArray, oldArtifactsCount * 4);
-        putDword(framesAddress, newFrameArray);
-
-        int nextFrameAddress = newFrameArray + oldArtifactsCount * 4;
-        for (int i = 0; i < singleFrameDefs.length; i++) {
-            int groups = dwordAt(singleFrameDefs[i] + Def.OFFSET_GROUPS_ARRAY);
-            int group = dwordAt(groups);
-            int frames = dwordAt(group + Group.OFFSET_FRAMES);
-            int frame = dwordAt(frames);
-            putDword(nextFrameAddress + i * 4, frame);
-        }
-    }
-
     public static class Group {
         public static final int SIZE = 0x0C;
         public static final int OFFSET_FRAMES_COUNT = 0;
@@ -189,11 +159,11 @@ public class Def extends Resource {
         public static final int OFFSET_FRAMES = 8;
 
         public static int allocate() {
-            return malloc(SIZE);
+            return mallocAuto(SIZE);
         }
 
         public static int create(int frames) {
-            int result = malloc(SIZE);
+            int result = allocate();
             putDword(result + OFFSET_FRAMES_COUNT, frames);
             putDword(result + OFFSET_MAX_FRAMES_COUNT, frames);
             return result;
@@ -204,7 +174,7 @@ public class Def extends Resource {
         public static final int SIZE = 0x48;
 
         public static int allocate() {
-            return malloc(SIZE);
+            return mallocAuto(SIZE);
         }
 
         public static int createNew(

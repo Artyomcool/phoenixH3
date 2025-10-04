@@ -1,6 +1,5 @@
 package phoenix.h3.game.stdlib;
 
-import static phoenix.h3.H3.dbg;
 import static phoenix.h3.game.stdlib.Memory.*;
 
 public class StdVector {
@@ -27,7 +26,10 @@ public class StdVector {
         int size = srcDataEndPtr - srcDataPtr;
         int dstMalloc = malloc(size);
         memcpy(dstMalloc, srcDataPtr, size);
-        // todo optimize and deallocate
+        int oldDst = dwordAt(dst + OFFSET_DATA_PTR);
+        if (oldDst != 0) {
+            free(oldDst);
+        }
         putDword(dst + OFFSET_DATA_PTR, dstMalloc);
         putDword(dst + OFFSET_DATA_END_PTR, dstMalloc + size);
         putDword(dst + OFFSET_DATA_CAPACITY_END_PTR, dstMalloc + size);
@@ -50,8 +52,6 @@ public class StdVector {
         putDword(vector + OFFSET_DATA_PTR, newDataPtr);
         putDword(vector + OFFSET_DATA_END_PTR, newDataPtr + newSize);
         putDword(vector + OFFSET_DATA_CAPACITY_END_PTR, newDataPtr + newSize);
-
-        dbg(oldSize, " ", newSize);
 
         return newDataPtr + oldSize;
     }

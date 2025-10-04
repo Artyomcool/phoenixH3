@@ -4,6 +4,7 @@ import phoenix.h3.annotations.Downcall;
 import phoenix.h3.annotations.Thiscall;
 
 import static phoenix.h3.game.stdlib.Memory.malloc;
+import static phoenix.h3.game.stdlib.Memory.mallocAuto;
 
 public class PaletteRGB888 {
 
@@ -12,7 +13,7 @@ public class PaletteRGB888 {
     public static final int OFFSET_COLORS = 0x1C;
 
     public static int allocate() {
-        return malloc(SIZE);
+        return mallocAuto(SIZE);
     }
 
     @Thiscall
