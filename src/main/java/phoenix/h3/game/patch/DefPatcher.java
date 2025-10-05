@@ -7,7 +7,7 @@ import phoenix.h3.annotations.Upcall;
 import static phoenix.h3.annotations.R.*;
 import static phoenix.h3.game.stdlib.Memory.putDword;
 
-public class DefPatcher extends Patcher {
+public class DefPatcher extends Patcher.Stateless {
 
     private final OwnResourceCache ownCache;
 

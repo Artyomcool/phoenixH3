@@ -1,16 +1,20 @@
 package phoenix.h3;
 
-import phoenix.h3.game.patch.*;
+import phoenix.h3.game.patch.CombatManagerPatcher;
+import phoenix.h3.game.patch.DefPatcher;
+import phoenix.h3.game.patch.OwnResourceCache;
+import phoenix.h3.game.patch.PatchRepository;
 import phoenix.h3.game.patch.artifact.*;
-import phoenix.h3.game.patch.crbank.CreatureBankPatcher;
-import phoenix.h3.game.patch.crbank.CreatureBankRepository;
-import phoenix.h3.game.patch.replacer.CustomBank;
-import phoenix.h3.game.patch.replacer.PhoenixForge;
-import phoenix.h3.game.patch.replacer.ReplacerRepository;
+import phoenix.h3.game.patch.map.EventPatcher;
+import phoenix.h3.game.patch.map.SeerPatcher;
+import phoenix.h3.game.patch.map.crbank.CreatureBankPatcher;
+import phoenix.h3.game.patch.map.crbank.CreatureBankRepository;
+import phoenix.h3.game.patch.map.replacer.CustomBank;
+import phoenix.h3.game.patch.map.replacer.PhoenixForge;
+import phoenix.h3.game.patch.map.replacer.ReplacerRepository;
 
 public class Init {
     public static PatchRepository start() {
-
         OwnResourceCache resources = new OwnResourceCache();
 
         ArtifactRepository artifacts = ArtifactRepository.withCustomArtifacts(
@@ -22,8 +26,8 @@ public class Init {
         CreatureBankRepository banks = new CreatureBankRepository();
 
         ReplacerRepository replacers = ReplacerRepository.withReplacers(
-                new PhoenixForge(artifacts, banks),
-                new CustomBank(artifacts, banks)
+                new PhoenixForge(artifacts, banks, resources),
+                new CustomBank(artifacts, banks, resources)
         );
 
         return PatchRepository.install(
@@ -31,6 +35,7 @@ public class Init {
                 new SeerPatcher(artifacts),
                 new CustomArtifactPatcher(artifacts, resources),
                 new DefPatcher(resources),
+
                 new EventPatcher(replacers),
                 new CreatureBankPatcher(banks)   // should be after ALL patchers that can trigger bank creations
         );

@@ -13,7 +13,7 @@ import static phoenix.h3.annotations.R.*;
 import static phoenix.h3.game.patch.artifact.ArtifactRepository.FIRST_CUSTOM_ARTIFACT_ID;
 import static phoenix.h3.game.stdlib.Memory.*;
 
-public class CustomArtifactPatcher extends Patcher {
+public class CustomArtifactPatcher extends Patcher.Stateless {
 
     public static final int ARTIFACT_TABLE = 0x660B68;
 
@@ -21,14 +21,13 @@ public class CustomArtifactPatcher extends Patcher {
     private final OwnResourceCache ownCache;
 
     public CustomArtifactPatcher(ArtifactRepository artifacts, OwnResourceCache ownCache) {
-        //todo bug in cldc hi? super(DefPatcher.class, DefFrameDlgItemPatcher.class);
+        //todo add support of class literals super(DefPatcher.class, DefFrameDlgItemPatcher.class);
         this.artifacts = artifacts;
         this.ownCache = ownCache;
     }
 
     @Override
-    public void onGameCreated(boolean saveLoad) {
-        super.onGameCreated(saveLoad);
+    public void onGameStarted() {
         int artifactDef = loadArtifactDef();
         int[] defsOffsets = preloadDefs();
         for (int i = 0; i < defsOffsets.length; i++) {
@@ -96,9 +95,7 @@ public class CustomArtifactPatcher extends Patcher {
         int[] loadedDefsOffsets = new int[customArtifacts.size()];
         for (int i = 0, customArtifactsSize = customArtifacts.size(); i < customArtifactsSize; i++) {
             CustomArtifact artifact = customArtifacts.get(i);
-            int def = Def.loadFromJar(artifact.defName);
-            loadedDefsOffsets[i] = def;
-            ownCache.register(artifact.defName, def);
+            loadedDefsOffsets[i] = ownCache.customDef(artifact.defName);
         }
         return loadedDefsOffsets;
     }

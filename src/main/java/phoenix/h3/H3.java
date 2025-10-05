@@ -6,7 +6,10 @@ import phoenix.h3.game.GzFile;
 import phoenix.h3.game.patch.*;
 import phoenix.h3.game.stdlib.Memory;
 
-import static phoenix.h3.annotations.R.EDX;
+import java.io.IOException;
+
+import static phoenix.h3.annotations.R.*;
+import static phoenix.h3.game.stdlib.Memory.*;
 
 public class H3 {
 
@@ -15,21 +18,21 @@ public class H3 {
     public static void main(String[] args) {
         System.loadLibrary("phoenixH3");
 
-        try {
-            new H3().init();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+        new H3().init();
         notifyInitialized();
         throw new IllegalStateException("Should never got here!");
     }
 
     private void init() {
-        new Patcher() {
+        new Patcher.Stateless() {
+            Object savedPatches;
+
             @Upcall(base = 0x407740)
             public void cleanup() {
-                // well, we uninstall it on the native side, do we really need it?
+                // todo well, we uninstall it on the native side, do we really need it?
+                // todo moreover, it does literally nothing for now)
                 patchRepository.rollbackPatches();
+
                 Memory.autoFree();
                 System.exit(0);
             }
@@ -44,12 +47,33 @@ public class H3 {
 
             @Upcall(base = 0x4c01a2)
             public void afterGameCreated() {
-                patchRepository.onGameCreated(false);
+                patchRepository.onStart(null);
             }
 
             @Upcall(base = 0x4BF1F3)
             public void afterSaveLoaded() {
-                patchRepository.onGameCreated(true);
+                patchRepository.onStart(savedPatches);
+            }
+
+            @Upcall(base = 0x4BE1DD)
+            void onSaveExtras(@R(ESI) int gzFile) throws IOException {
+                Object data = patchRepository.savePatches();
+                // todo too many memory moves)
+                byte[] serialized = Serializer.serialize(data);
+                int tmpMemory = malloc(serialized.length + 4);
+                putDword(tmpMemory, serialized.length);
+                putArray(tmpMemory + 4, serialized, 0, serialized.length);
+                GzFile.write(gzFile, tmpMemory, serialized.length + 4);
+                free(tmpMemory);
+            }
+
+            @Upcall(base = 0x4BCD09)
+            void onLoadExtras(@R(EBX) int gzFile) throws IOException {
+                int size = GzFile.readDword(gzFile);
+                byte[] data = new byte[size];
+                GzFile.readFully(gzFile, data);
+                //noinspection unchecked
+                savedPatches = Serializer.deserialize(data);
             }
         }.installPatch();
 
@@ -66,12 +90,14 @@ public class H3 {
     }
 
     public static native void notifyInitialized();
+    public static native void extractPatchInfo(PatchInfo out);
+
+
+    // all of that "magic" is used for "cooperative" switch between upcall/downcall state
+    // it is very similar to modern stackfull coroutines, except it neither "stackfull" nor "coroutine")))
+    public static native void pauseJvmLoop();
     public static native void exitFromUpcall(int depth);
     public static native int exitFromDowncall();
-    public static native void extractPatchInfo(PatchInfo out);
-    public static native void pauseJvmLoop();
-
-
     public static int depth = 0;
     public static void loop() {
         int d = depth;

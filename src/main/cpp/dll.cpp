@@ -511,10 +511,7 @@ void SodSuperPatchEntryPoint(void* all_data_pos, PushadRegs* registers) {
     }
     _jni_env.PushLocalFrame(1);
     h3Class = _jni_env.NewGlobalRef(_jni_env.FindClass("phoenix/h3/H3"));
-    DBG("h3Class %p", h3Class);
     _jni_env.PopLocalFrame(NULL);
-
-    DBG("SodSuperPatchEntryPoint initialized");
 }
 
 // __cdecl: caller restores ESP
@@ -902,7 +899,6 @@ KNIDECL(Patcher_performPatchInstallation) {
 
         jobject globalPatcher = _jni_env.NewGlobalRef(patcher);
         void* data = (void*)codegen::emit_bind_params_fastcall(globalPatcher, i, params);
-        DBG("Installed: %s/%d", className(patcherClass));
         //todo - before/after
         auto* t = install_inline_hook((void*)(upcall.base + upcall.offset), (void*)&JVMPatchHook, (int)data, true);
         t->next = trampoline;
@@ -911,7 +907,6 @@ KNIDECL(Patcher_performPatchInstallation) {
 
     _jni_env.PopLocalFrame(NULL);
     KNI_EndHandles();
-    DBG("after patch installation");
     KNI_ReturnVoid();
 }
 
@@ -980,7 +975,6 @@ void* downcallFor(const char* class_sig, const char* method_name) {
     }
 
     int argc = methods_args_count(clazz, method_index);
-    DBG("after methods_args_count %d", argc);
 
     _jni_env.PopLocalFrame(NULL);
     return codegen::make_generated_function(downcall.value, argc, downcall.cc, (void*)&push_downcall);
@@ -1010,7 +1004,6 @@ static int hex4(const char* p) {
     if (strcmp(method_name, #name) == 0) return (void*)&Java_##JC##_##name;
 
 extern "C" void* addressOfFunc(const char* name) {
-    DBG("addressOfFunc: %s", name);
     if (!name) return 0;
     if (name[0] != 'J' || name[1] != 'a' || name[2] != 'v' || name[3] != 'a' || name[4] != '_') return 0;
     // Parse the JNI-style name: Java_package1_package2_Class_method__sig
@@ -1060,7 +1053,6 @@ extern "C" void* addressOfFunc(const char* name) {
 
     // Now class_sig contains the class signature, method_name contains the method name
     // Example: Java_phoenix_h3_H3_notifyInitialized -> class_sig="phoenix/h3/H3", method_name="notifyInitialized"
-    DBG("Resolved: class_sig=%s, method_name=%s", class_sig, method_name);
     void* downcall = downcallFor(class_sig, method_name);
     if (downcall) return downcall;
 
@@ -1090,7 +1082,6 @@ extern "C" void* addressOfFunc(const char* name) {
         NATIVE_METHOD(Memory, cstrAt)
         NATIVE_METHOD(Memory, putCstr)
     NATIVE_CLASS_END
-
 
     return 0;
 }

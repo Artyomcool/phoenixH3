@@ -27,6 +27,10 @@ public class NewfullMap {
         return StdVector.dataPtr(map + OFFSET_OBJECT_TYPES);
     }
 
+    public static int typesCount(int map) {
+        return StdVector.sizeInBytes(map + OFFSET_OBJECT_TYPES) / CObjectType.SIZE;
+    }
+
     public static int sprites(int map) {
         return StdVector.dataPtr(map + OFFSET_SPRITES);
     }
@@ -60,8 +64,11 @@ public class NewfullMap {
     }
 
     public static int cell(int map, int x, int y, int z) {
-        int size = size(map);
-        return cells(map) + (x + y * size + z * size * size) * NewmapCell.SIZE;
+        return cell(cells(map), size(map), x, y, z);
+    }
+
+    public static int cell(int cells, int size, int x, int y, int z) {
+        return cells + (x + y * size + z * size * size) * NewmapCell.SIZE;
     }
 
     public static int size(int map) {

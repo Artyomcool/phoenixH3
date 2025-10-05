@@ -1,4 +1,4 @@
-package phoenix.h3.game.patch.replacer;
+package phoenix.h3.game.patch.map.replacer;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -17,6 +17,13 @@ public class ReplacerRepository {
 
     private ReplacerRepository(Hashtable<String, Replacer> replacers) {
         this.replacers = replacers;
+    }
+
+    public void init(int game, int map, int cells, int size) {
+        Enumeration<Replacer> elements = replacers.elements();
+        while (elements.hasMoreElements()) {
+            elements.nextElement().init(game, map, cells, size);
+        }
     }
 
     public void performReplace(String[] tokens, int x, int y, int z, int cell, int typeAndSubtype, int event) {

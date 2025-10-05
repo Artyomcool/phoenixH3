@@ -1,5 +1,7 @@
 package phoenix.h3.game.patch;
 
+import phoenix.h3.game.Def;
+
 import java.util.Hashtable;
 
 public class OwnResourceCache {
@@ -7,6 +9,17 @@ public class OwnResourceCache {
     private final Hashtable<String, Integer> cache = new Hashtable<>();
 
     private int[][] patchedFrames = new int[0][];
+
+    public int customDef(String name) {
+        Integer address = cache.get(name);
+        if (address != null) {
+            return address;
+        }
+
+        int result = Def.loadFromJar(name);
+        cache.put(name, result);
+        return result;
+    }
 
     public void register(String name, int resourcePtr) {
         cache.put(name, resourcePtr);

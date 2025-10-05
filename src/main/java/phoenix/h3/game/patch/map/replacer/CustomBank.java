@@ -1,10 +1,14 @@
-package phoenix.h3.game.patch.replacer;
+package phoenix.h3.game.patch.map.replacer;
 
 import phoenix.h3.game.*;
+import phoenix.h3.game.patch.OwnResourceCache;
+import phoenix.h3.game.patch.Patcher;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
-import phoenix.h3.game.patch.crbank.CreatureBankRepository;
+import phoenix.h3.game.patch.map.crbank.CreatureBankRepository;
 import phoenix.h3.game.stdlib.Memory;
 import phoenix.h3.game.stdlib.StdVector;
+
+import java.util.Vector;
 
 import static phoenix.h3.game.stdlib.Memory.*;
 
@@ -16,10 +20,24 @@ public class CustomBank extends Replacer {
 
     private final ArtifactRepository artifacts;
     private final CreatureBankRepository banks;
+    private final OwnResourceCache resources;
 
-    public CustomBank(ArtifactRepository artifacts, CreatureBankRepository banks) {
+    private Vector<String> savedSprites = new Vector<>();
+    private Vector<Integer> savedTypesIndexes = new Vector<>();
+
+    public CustomBank(
+            ArtifactRepository artifacts,
+            CreatureBankRepository banks,
+            OwnResourceCache resources
+    ) {
         this.artifacts = artifacts;
         this.banks = banks;
+        this.resources = resources;
+    }
+
+    @Override
+    public StatePatcher asPatcher() {
+        return new StatePatcher();
     }
 
     @Override
@@ -33,8 +51,6 @@ public class CustomBank extends Replacer {
         int eventGuardians = Blackbox.guardians(event);
         int eventCreatures = Blackbox.creatures(event);
         int crBankIndex = NewmapCell.creatureBankIndex(cell);
-        int game = Game.instance();
-        int map = Game.map(game);
         int mapObjects = NewfullMap.objects(map);
         int objectIndex = NewmapCell.objectIndex(cell);
         int object = mapObjects + objectIndex * CObject.SIZE;
@@ -54,20 +70,54 @@ public class CustomBank extends Replacer {
                 );
             } else if (token.startsWith(DEF)) {
                 int type = CObject.type(object);
-                int index = NewfullMap.addNewType(map, type);
-                int newDef = Def.loadFromJar(token.substring(DEF.length()));
-                int address = NewfullMap.sprites(map) + index * 4;
-                Memory.registerDwordPatch(address);
-                putDword(address, newDef);
+                int newType = NewfullMap.addNewType(map, type);
 
-                putByte(object + CObject.OFFSET_TYPE_ID, index & 0xff);
-                putByte(object + CObject.OFFSET_TYPE_ID + 1, (index >> 8) & 0xff);
+                int address = NewfullMap.sprites(map) + newType * 4;
+                String defName = token.substring(DEF.length());
+                putDef(address, defName);
+
+                savedSprites.add(defName);
+                savedTypesIndexes.add(newType);
+
+                putByte(object + CObject.OFFSET_TYPE_ID, newType & 0xff);
+                putByte(object + CObject.OFFSET_TYPE_ID + 1, (newType >> 8) & 0xff);
             } else if (token.startsWith(NAME)) {
-                int subtype = banks.getOrCreate(token.substring(NAME.length())).id;
+                int subtype = banks.indexCreatureBank(token.substring(NAME.length()));
 
                 putByte(cell + NewmapCell.OFFSET_SUBTYPE, subtype & 0xff);
                 putByte(cell + NewmapCell.OFFSET_SUBTYPE + 1, (subtype >> 8) & 0xff);
             }
         }
     }
+
+    private void putDef(int address, String def) {
+        Memory.registerDwordPatch(address);
+        putDword(address, resources.customDef(def));
+    }
+
+    protected void restoreDefs() {
+        int sprites = NewfullMap.sprites(map);
+        for (int i = 0; i < savedSprites.size(); i++) {
+            putDef(sprites + savedTypesIndexes.get(i) * 4, savedSprites.get(i));
+        }
+    }
+
+    public class StatePatcher extends Patcher<Vector<Object>> {
+        @Override
+        protected Vector<Object> createInitialSaveData() {
+            Vector<Object> objects = new Vector<>();
+            objects.add(savedSprites);
+            objects.add(savedTypesIndexes);
+            return objects;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        protected void onSaveGameLoaded(Vector<Object> objects) {
+            savedSprites = (Vector<String>) objects.get(0);
+            savedTypesIndexes = (Vector<Integer>) objects.get(1);
+            restoreDefs();
+        }
+    }
+
 }

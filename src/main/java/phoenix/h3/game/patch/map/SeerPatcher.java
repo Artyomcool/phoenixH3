@@ -1,10 +1,11 @@
-package phoenix.h3.game.patch;
+package phoenix.h3.game.patch.map;
 
 import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.Quest;
 import phoenix.h3.game.Seer;
+import phoenix.h3.game.patch.Patcher;
 import phoenix.h3.game.stdlib.StdString;
 import phoenix.h3.game.common.CustomMarker;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
@@ -14,7 +15,7 @@ import java.util.Vector;
 import static phoenix.h3.annotations.R.EBX;
 import static phoenix.h3.game.stdlib.Memory.putDword;
 
-public class SeerPatcher extends Patcher {
+public class SeerPatcher extends Patcher.Stateless {
 
     private final ArtifactRepository artifacts;
 

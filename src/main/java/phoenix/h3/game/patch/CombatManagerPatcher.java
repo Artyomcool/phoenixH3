@@ -13,7 +13,7 @@ import static phoenix.h3.annotations.R.*;
 import static phoenix.h3.game.stdlib.Memory.dwordAt;
 import static phoenix.h3.game.stdlib.Memory.putDword;
 
-public class CombatManagerPatcher extends Patcher {
+public class CombatManagerPatcher extends Patcher.Stateless {
 
     public interface FightCostMultiplier {
         // todo make more sophisticated logic here
@@ -36,8 +36,8 @@ public class CombatManagerPatcher extends Patcher {
     }
 
     @Override
-    public Vector<Patcher> createChildPatches() {
-        Vector<Patcher> children = new Vector<>();
+    public Vector<Patcher<?>> createChildPatches() {
+        Vector<Patcher<?>> children = new Vector<>();
 
         Vector<FightCostMultiplier> fightcostAware = new Vector<>();
         Vector<FearEvaluator> fearAware = new Vector<>();
@@ -72,8 +72,8 @@ public class CombatManagerPatcher extends Patcher {
         return children;
     }
 
-    private Patcher createFightcostPatcher(final Vector<FightCostMultiplier> delegates) {
-        return new Patcher() {
+    private Patcher<?> createFightcostPatcher(final Vector<FightCostMultiplier> delegates) {
+        return new Patcher.Stateless() {
             @Upcall(base = 0x0442AA9)
             public void onAiGetStackFightValue(@R(ESP) int esp, @R(EBP) int ebp, @R(ESI) int battleStack) {
                 int hypnosisRounds = dwordAt(battleStack + 0x198 + 0x3C * 4); // hypnosis
@@ -100,8 +100,8 @@ public class CombatManagerPatcher extends Patcher {
         };
     }
 
-    private Patcher createFearPatcher(final Vector<FearEvaluator> delegates) {
-        return new Patcher() {
+    private Patcher<?> createFearPatcher(final Vector<FearEvaluator> delegates) {
+        return new Patcher.Stateless() {
             private int lastStackOwnerSide;
 
             @Upcall(base = 0x464977)
@@ -129,8 +129,8 @@ public class CombatManagerPatcher extends Patcher {
         };
     }
 
-    private Patcher createPhoenixResuurectPatcher(final Vector<PhoenixResurrectCountEvaluator> delegates) {
-        return new Patcher() {
+    private Patcher<?> createPhoenixResuurectPatcher(final Vector<PhoenixResurrectCountEvaluator> delegates) {
+        return new Patcher.Stateless() {
             @Upcall(base = 0x4690E2)
             public void phoenix(@R(ESP) int esp, @R(EBX) int amount, @R(ESI) int battleStack, @Dword(at = ESI, offset = 0x60) int countAtStart) {
                 int hypnosisRounds = dwordAt(battleStack + 0x198 + 0x3C * 4); // hypnosis
