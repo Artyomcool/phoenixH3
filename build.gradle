@@ -41,6 +41,7 @@ phoenixForge {
     inputB = externalDir.file(pfProps.getProperty('inputB'))
 
     inputDll = file("src/main/cpp/dll.dll")
+    inputLoaderDll = file("src/main/cpp/dll_loader.dll")
     outputFile = externalDir.file('_______XXX.h3m')
     exeFile = externalDir.file('../Heroes3 HD.exe')
 }

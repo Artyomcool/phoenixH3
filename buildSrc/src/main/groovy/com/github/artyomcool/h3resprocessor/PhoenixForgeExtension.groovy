@@ -9,6 +9,7 @@ class PhoenixForgeExtension {
     final RegularFileProperty inputA
     final RegularFileProperty inputB
     final RegularFileProperty inputDll
+    final RegularFileProperty inputLoaderDll
     final RegularFileProperty outputFile
     final RegularFileProperty exeFile
 
@@ -17,6 +18,7 @@ class PhoenixForgeExtension {
         this.inputA = objects.fileProperty()
         this.inputB = objects.fileProperty()
         this.inputDll = objects.fileProperty()
+        this.inputLoaderDll = objects.fileProperty()
         this.outputFile = objects.fileProperty()
         this.exeFile = objects.fileProperty()
     }

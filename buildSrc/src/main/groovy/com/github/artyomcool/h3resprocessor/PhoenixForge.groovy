@@ -19,6 +19,7 @@ class PhoenixForge implements Plugin<Project> {
             task.inputA.set(ext.inputA)
             task.inputB.set(ext.inputB)
             task.inputDll.set(ext.inputDll)
+            task.inputLoaderDll.set(ext.inputLoaderDll)
             task.outputFile.set(ext.outputFile)
         }
 

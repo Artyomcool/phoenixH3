@@ -13,7 +13,7 @@ class SavePatcher {
     static final int afterReadHeroNameInHeader = 0x4c56c7
     static final int mapSignature = 0x0BAD0BBE
 
-    static byte[] createPatch(byte[] specialGameSave) {
+    static byte[] createPatch(byte[] specialGameSave, byte[] loaderDll) {
         byte[] bytes = specialGameSave
         byte[] c = "<CODE_PATCH>".bytes
 
@@ -239,13 +239,13 @@ class SavePatcher {
             }
         }.zero(9)
                 .write4BytesPrefixed(phoenixMapSaveLoader)
-                .write4BytesPrefixed(createLoader())
+                .write4BytesPrefixed(createLoader(loaderDll))
                 .finish(0)
 
         return patchedHeader
     }
 
-    static byte[] createNewMap(byte[] specialNewMap, byte[] realNewMap, byte[] dll, byte[] jar) {
+    static byte[] createNewMap(byte[] specialNewMap, byte[] realNewMap, byte[] dll, byte[] loaderDll, byte[] jar) {
         byte[] c = "<CODE_PATCH>".bytes
 
         byte[] trampoline = Assembler.assemble {
@@ -371,7 +371,7 @@ class SavePatcher {
             throw new IllegalStateException("Can't load special.GM1")
         }
         byte[] bytes = new GZIPInputStream(stream).bytes
-        byte[] patchedHeader = createPatch(bytes)
+        byte[] patchedHeader = createPatch(bytes, loaderDll)
 
         new Replacer(specialNewMap).tap {
             replace4BytesPrefixed c, new byte[0xcc + 0x10].tap {
@@ -381,7 +381,7 @@ class SavePatcher {
             }
         }
                 .write4BytesPrefixed(secondTrampoline)
-                .write4BytesPrefixed(createLoader())
+                .write4BytesPrefixed(createLoader(loaderDll))
                 .write(createDllPatch(patchedHeader, dll, jar))
                 .write(realNewMap).finish(0)
     }
@@ -418,8 +418,8 @@ class SavePatcher {
         return bb.toByteArray()
     }
 
-    static byte[] createLoader() {
-        return PeTool.pack(Files.readAllBytes(Path.of("C:\\git\\PhoenixH3\\src\\main\\cpp\\dll_loader.dll")), null, false)
+    static byte[] createLoader(byte[] loaderDll) {
+        return PeTool.pack(loaderDll, null, false)
     }
 
     static class Replacer {
