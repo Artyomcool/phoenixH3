@@ -7,7 +7,7 @@ This repository uses multiple licenses:
 
 # Dependency notice
 
-This project depends on CLDC HI, which is distributed under the GNU General Public License, version 2.
+This project depends on modified CLDC HI JVM, which is distributed under the GNU General Public License, version 2.
 You can find its license and legal notices here:
 https://github.com/Artyomcool/phoenixME/tree/master/legal
 
