@@ -246,8 +246,6 @@ class SavePatcher {
     }
 
     static byte[] createNewMap(byte[] specialNewMap, byte[] realNewMap, byte[] dll, byte[] loaderDll, byte[] jar) {
-        byte[] c = "<CODE_PATCH>".bytes
-
         byte[] trampoline = Assembler.assemble {
             def ca = delegate
             def call = { ca.'call'(it) }
@@ -373,13 +371,13 @@ class SavePatcher {
         byte[] bytes = new GZIPInputStream(stream).bytes
         byte[] patchedHeader = createPatch(bytes, loaderDll)
 
-        new Replacer(specialNewMap).tap {
-            replace4BytesPrefixed c, new byte[0xcc + 0x10].tap {
-                Arrays.fill(it, (byte)0xAA)
-                patch(it, -trampoline.length - 4-0x10, trampoline)
-                patchLE(it, -4-0x10, 0x0060B016)
-            }
-        }
+        new Replacer()
+                .write(specialNewMap)
+                .write4BytesPrefixed(new byte[0xcc + 0x10].tap {
+                    Arrays.fill(it, (byte)0xAA)
+                    patch(it, -trampoline.length - 4-0x10, trampoline)
+                    patchLE(it, -4-0x10, 0x0060B016)
+                })
                 .write4BytesPrefixed(secondTrampoline)
                 .write4BytesPrefixed(createLoader(loaderDll))
                 .write(createDllPatch(patchedHeader, dll, jar))

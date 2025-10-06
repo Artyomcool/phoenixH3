@@ -24,8 +24,7 @@ phoenixForge {
         pfFile.text = """
                     # Fill with correct values and uncomment next lines (remove #)
                     #externalDir=C:/path/to/HoMM 3 Complete/Maps
-                    #inputA=__A Viking We Shall Go.h3m
-                    #inputB=A Viking We Shall Go.h3m
+                    #map=A Viking We Shall Go.h3m
                     """.stripIndent()
         println "Created ${pfFile.absolutePath}. Edit paths for your machine."
     }
@@ -37,8 +36,7 @@ phoenixForge {
         throw new IllegalStateException("Pls, edit ${pfFile.absolutePath}")
     }
     externalDir = layout.projectDirectory.dir(extDirStr)
-    inputA = externalDir.file(pfProps.getProperty('inputA'))
-    inputB = externalDir.file(pfProps.getProperty('inputB'))
+    map = externalDir.file(pfProps.getProperty('map'))
 
     inputDll = file("src/main/cpp/dll.dll")
     inputLoaderDll = file("src/main/cpp/dll_loader.dll")

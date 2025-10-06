@@ -6,8 +6,7 @@ import org.gradle.api.model.ObjectFactory
 
 class PhoenixForgeExtension {
     final DirectoryProperty externalDir
-    final RegularFileProperty inputA
-    final RegularFileProperty inputB
+    final RegularFileProperty map
     final RegularFileProperty inputDll
     final RegularFileProperty inputLoaderDll
     final RegularFileProperty outputFile
@@ -15,8 +14,7 @@ class PhoenixForgeExtension {
 
     PhoenixForgeExtension(ObjectFactory objects) {
         this.externalDir = objects.directoryProperty()
-        this.inputA = objects.fileProperty()
-        this.inputB = objects.fileProperty()
+        this.map = objects.fileProperty()
         this.inputDll = objects.fileProperty()
         this.inputLoaderDll = objects.fileProperty()
         this.outputFile = objects.fileProperty()
