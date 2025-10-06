@@ -5,8 +5,6 @@ This repository uses multiple licenses:
 - **/src** — licensed under **GPL-2.0-only**. This code is intended for end‑user distribution.
 - **/buildSrc** — licensed under **Apache-2.0**. This directory contains build-time tooling only and is **not** linked or distributed as part of runtime artifacts.
 
-The full license texts (or authoritative links) are in **/LICENSES**.
-
 # Dependency notice
 
 This project depends on CLDC HI, which is distributed under the GNU General Public License, version 2.
