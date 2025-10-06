@@ -26,8 +26,7 @@ public class ArtifactRepository {
         idByName = new Hashtable<>(artifacts.size() * 2);
 
         int i = 0;
-        for (int j = 0, artifactsSize = artifacts.size(); j < artifactsSize; j++) {
-            CustomArtifact artifact = artifacts.get(j);
+        for (CustomArtifact artifact : artifacts) {
             idByName.put(artifact.name, i++);
         }
     }
@@ -40,7 +39,7 @@ public class ArtifactRepository {
         Integer index = idByName.get(name);
         if (index == null) {
             throw new IllegalArgumentException(
-                    new StringBuffer("No such artifact installed: ").append(name).toString());
+                    "No such artifact installed: " + name);
         }
         return artifacts.get(index);
     }

@@ -29,8 +29,8 @@ public class CreatureBankPatcher extends Patcher<Vector<String>> {
 
     @Override
     protected void onSaveGameLoaded(Vector<String> names) {
-        for (int i = 0, namesSize = names.size(); i < namesSize; i++) {
-            banks.index(names.get(i));
+        for (String name : names) {
+            banks.index(name);
         }
         banks.finish();
         patchCrBankTable();
@@ -45,8 +45,7 @@ public class CreatureBankPatcher extends Patcher<Vector<String>> {
         int newFrameArray = patchArray(ptrCrBankTable, oldSize, (oldCount + savedData.size()) * recordSize);
 
         int ptr = newFrameArray + oldSize;
-        for (int i = 0, bankNamesSize = savedData.size(); i < bankNamesSize; i++) {
-            String name = savedData.get(i);
+        for (String name : savedData) {
             int cstr = mallocAuto(name.length() + 1);
             putCstr(cstr, name);
             StdString.put(ptr, cstr, name.length());

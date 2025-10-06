@@ -44,8 +44,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         Vector<PhoenixResurrectCountEvaluator> phoenixResurrectCountEvaluators = new Vector<>();
 
         Vector<CustomArtifact> artifacts = repository.artifacts;
-        for (int i = 0, artifactsSize = artifacts.size(); i < artifactsSize; i++) {
-            CustomArtifact artifact = artifacts.get(i);
+        for (CustomArtifact artifact : artifacts) {
             if (artifact instanceof FightCostMultiplier) {
                 fightcostAware.add((FightCostMultiplier) artifact);
             }
@@ -141,8 +140,8 @@ public class CombatManagerPatcher extends Patcher.Stateless {
                 int hero = CombatManager.hero(dwordAt(0x699420), player);
 
                 int oldAmount = amount;
-                for (int i = 0; i < delegates.size(); i++) {
-                    amount = delegates.get(i).phoenixResurrectCnt(hero, amount, countAtStart);
+                for (PhoenixResurrectCountEvaluator delegate : delegates) {
+                    amount = delegate.phoenixResurrectCnt(hero, amount, countAtStart);
                 }
 
                 if (oldAmount != amount) {

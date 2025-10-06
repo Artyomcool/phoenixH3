@@ -31,8 +31,7 @@ public class SeerPatcher extends Patcher.Stateless {
             return;
         }
 
-        for (int i = 0, tokensSize = tokens.size(); i < tokensSize; i++) {
-            Vector<String> line = tokens.get(i);
+        for (Vector<String> line : tokens) {
             if (line.get(0).equals("GIVE")) {
                 if (line.get(1).equals("ARTIFACT")) {
                     int id = artifacts.idOf(artifacts.artifact(line.get(2)));

@@ -44,8 +44,8 @@ public class CustomBank extends Replacer {
     public void performReplace(String[] tokens, int x, int y, int z, int cell, int typeAndSubtype, int event) {
         if ((typeAndSubtype & 0xffff) != 16) {
             throw new IllegalArgumentException(
-                    new StringBuffer("Expected to have type and subtype: 0x")
-                            .append(Integer.toHexString(typeAndSubtype)).toString());
+                    "Expected to have type and subtype: 0x" +
+                            Integer.toHexString(typeAndSubtype));
         }
 
         int eventGuardians = Blackbox.guardians(event);

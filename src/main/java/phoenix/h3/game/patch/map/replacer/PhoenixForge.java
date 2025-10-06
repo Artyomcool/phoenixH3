@@ -47,8 +47,7 @@ public class PhoenixForge extends CustomBank {
             protected void onSaveGameLoaded(Vector<Object> objects) {
                 super.onSaveGameLoaded(objects);
                 cellsToRestore = (Vector<Integer>) objects.get(2);
-                for (int i = 0; i < cellsToRestore.size(); i++) {
-                    int coords = cellsToRestore.get(i);
+                for (int coords : cellsToRestore) {
                     int cell = NewfullMap.cell(cells, size, coords & 0xff, (coords >> 8) & 0xff, coords >> 16);
                     phoenixCells.put(cell, Boolean.TRUE);
                 }

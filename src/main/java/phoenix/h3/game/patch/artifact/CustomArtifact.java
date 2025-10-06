@@ -64,6 +64,6 @@ public abstract class CustomArtifact {
     }
 
     protected String createDefName() {
-        return new StringBuffer("artifact.").append(createShortName()).toString();
+        return "artifact." + createShortName();
     }
 }

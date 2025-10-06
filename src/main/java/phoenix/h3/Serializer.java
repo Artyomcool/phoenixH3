@@ -143,8 +143,8 @@ public class Serializer {
             Vector<?> v = (Vector<?>) obj;
             out.write(T_VECTOR);
             out.writeInt(v.size());
-            for (int i = 0; i < v.size(); i++) {
-                writeObject(out, v.get(i));
+            for (Object object : v) {
+                writeObject(out, object);
             }
         } else if (obj instanceof Hashtable) {
             Hashtable<?, ?> ht = (Hashtable<?, ?>) obj;
@@ -156,7 +156,7 @@ public class Serializer {
                 writeObject(out, v.nextElement());
             }
         } else {
-            throw new IOException(new StringBuffer("Unsupported type: ").append(obj.getClass().getName()).toString());
+            throw new IOException("Unsupported type: " + obj.getClass().getName());
         }
     }
 
@@ -273,7 +273,7 @@ public class Serializer {
                 return ht;
             }
             default:
-                throw new IOException(new StringBuffer("Unknown tag: ").append(tag).toString());
+                throw new IOException("Unknown tag: " + tag);
         }
     }
 }

@@ -61,8 +61,7 @@ public class EventPatcher extends Patcher.Stateless {
         int x = coords & 0xff;
         int y = (coords >>> 8) & 0xff;
         int z = (coords >>> 16) & 0xff;
-        for (int i = 0; i < customs.size(); i++) {
-            Vector<String> tokens = customs.get(i);
+        for (Vector<String> tokens : customs) {
             if (tokens.get(0).equals("REPLACE")) {
                 if (tokens.get(1).equals("LEFT")) {
                     String[] tok = new String[tokens.size() - 2];
@@ -85,24 +84,21 @@ public class EventPatcher extends Patcher.Stateless {
         int size = NewfullMap.size(map);
 
         repository.init(game, map, cells, size);
-        for (int i = 0; i < replacers.size(); i++) {
-            ReplacementInfo info = replacers.get(i);
-
+        for (ReplacementInfo info : replacers) {
             int cell = NewfullMap.cell(cells, size, info.x, info.y, info.z);
 
             int typeAndSubtype = NewmapCell.typeAndSubtype(cell);
             if (typeAndSubtype == 0) {
-                throw new IllegalStateException(new StringBuffer("No objects to replace at ")
-                        .append(info.x)
-                        .append(':')
-                        .append(info.y)
-                        .append(':')
-                        .append(info.z)
-                        .toString()
+                throw new IllegalStateException("No objects to replace at " +
+                        info.x +
+                        ':' +
+                        info.y +
+                        ':' +
+                        info.z
                 );
             }
 
-            repository.performReplace(info.tokens, info.x, info.y, info.z, cell, typeAndSubtype,  info.event);
+            repository.performReplace(info.tokens, info.x, info.y, info.z, cell, typeAndSubtype, info.event);
         }
     }
 

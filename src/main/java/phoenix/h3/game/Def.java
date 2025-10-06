@@ -35,9 +35,9 @@ public class Def extends Resource {
     public static native int getByName(int name);
 
     public static int loadFromJar(String defName) {
-        InputStream stream = Def.class.getResourceAsStream(new StringBuffer("/").append(defName).toString());
+        InputStream stream = Def.class.getResourceAsStream("/" + defName);
         if (stream == null) {
-            throw new IllegalArgumentException(new StringBuffer(defName).append(" not found").toString());
+            throw new IllegalArgumentException(defName + " not found");
         }
         try {
             return loadDefFromResourceStream(defName, stream);

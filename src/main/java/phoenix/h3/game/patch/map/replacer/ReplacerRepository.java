@@ -30,7 +30,7 @@ public class ReplacerRepository {
         String name = tokens[0];
         Replacer replacer = replacers.get(name);
         if (replacer == null) {
-            throw new IllegalArgumentException(new StringBuffer("Unknown replacer: ").append(name).toString());
+            throw new IllegalArgumentException("Unknown replacer: " + name);
         }
         replacer.performReplace(tokens, x, y, z, cell, typeAndSubtype, event);
     }

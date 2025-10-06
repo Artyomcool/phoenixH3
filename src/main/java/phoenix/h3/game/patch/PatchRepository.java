@@ -18,14 +18,12 @@ public class PatchRepository {
             addRecursive(collectedPatchers, patcher);
         }
 
-        for (int i = 0, collectedPatchersSize = collectedPatchers.size(); i < collectedPatchersSize; i++) {
-            Patcher<?> patcher = collectedPatchers.get(i);
+        for (Patcher<?> patcher : collectedPatchers) {
             classes.put(patcher.getClass(), Boolean.TRUE);
         }
 
         StringBuffer notFound = new StringBuffer();
-        for (int i = 0, collectedPatchersSize = collectedPatchers.size(); i < collectedPatchersSize; i++) {
-            Patcher<?> patcher = collectedPatchers.get(i);
+        for (Patcher<?> patcher : collectedPatchers) {
             for (Class<? extends Patcher<?>> dependency : patcher.dependencies) {
                 if (!classes.containsKey(dependency)) {
                     if (notFound.length() == 0) {
@@ -44,8 +42,7 @@ public class PatchRepository {
         }
 
         PatchRepository repository = new PatchRepository(collectedPatchers);
-        for (int i = 0, collectedPatchersSize = collectedPatchers.size(); i < collectedPatchersSize; i++) {
-            Patcher<?> patcher = collectedPatchers.get(i);
+        for (Patcher<?> patcher : collectedPatchers) {
             patcher.installPatch();
         }
         return repository;
@@ -55,8 +52,8 @@ public class PatchRepository {
         out.add(patcher);
         Vector<Patcher<?>> children = patcher.createChildPatches();
         if (children != null) {
-            for (int i = 0; i < children.size(); i++) {
-                addRecursive(out, children.get(i));
+            for (Patcher<?> child : children) {
+                addRecursive(out, child);
             }
         }
     }
@@ -71,7 +68,7 @@ public class PatchRepository {
                 String className = (String) allData[i * 2];
                 String patchClassName = patcher.getClass().getName();
                 if (!patchClassName.equals(className)) {
-                    throw new IllegalStateException(new StringBuffer("Wrong patches order: expected ").append(patchClassName).append(", got ").append(className).toString());
+                    throw new IllegalStateException("Wrong patches order: expected " + patchClassName + ", got " + className);
                 }
 
                 data = allData[i * 2 + 1];
