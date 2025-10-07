@@ -43,7 +43,7 @@ If the project gains interest from the community, future development will focus 
 - All derivative projects must remain open-source under a compatible license.
 
 ## Running
-To start Phoenix:  
+To start Phoenix, make sure you have JDK 17 installed, and then:  
 ```bash
 ./gradlew phoenixRun
 ```
