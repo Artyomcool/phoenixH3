@@ -20,7 +20,7 @@ These examples demonstrate how the engine can be patched and extended **from wit
 ![image](https://github.com/user-attachments/assets/fa12ff86-9642-4549-9add-e907e2d10440)
 
 
-> Each map can define new artifacts, events, and creature banks entirely through embedded Java modules.
+> Each map can define it's own new artifacts, creature banks, etc entirely through embedded Java modules.
 
 ## Features
 - Embed mods directly into `.h3m` maps.  
