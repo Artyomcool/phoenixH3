@@ -1,5 +1,6 @@
 package phoenix.h3.game.patch.artifact;
 
+import phoenix.h3.H3;
 import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;

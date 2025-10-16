@@ -1,5 +1,6 @@
 package phoenix.h3.game.patch;
 
+import phoenix.h3.annotations.Arg;
 import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
@@ -167,11 +168,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         return new Patcher.Stateless() {
 
             @Upcall(base = 0x5A0140)
-            public void cast(
-                    @R(ECX) int combatMgr,
-                    @Dword(at = ESP, offset = 0x08) int spellId,
-                    @Dword(at = ESP, offset = 0x0C) int hexId
-            ) {
+            public void cast(@R(ECX) int combatMgr, @Arg(1) int spellId, @Arg(2) int hexId) {
                 int hero = CombatManager.hero(combatMgr);
                 for (CastListener delegate : delegates) {
                     delegate.onCast(hero, spellId, hexId);

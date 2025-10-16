@@ -24,4 +24,22 @@ public class DefPatcher extends Patcher.Stateless {
         }
     }
 
+    @Upcall(base = 0x47B7D0)
+    public void onPointerDrawFrame(@R(ESP) int esp, @R(ECX) int _this, @Arg(1) int frameIndex) {
+        int replacement = ownCache.findPatchedFrame(_this, 0, frameIndex);
+        if (replacement != 0) {
+            putDword(esp - 8, replacement); // ecx
+            putDword(esp + 8, 0); // arg 1
+        }
+    }
+
+    @Upcall(base = 0x47B610)
+    public void onSpriteDrawFrame(@R(ESP) int esp, @R(ECX) int _this, @Arg(1) int groupIndex, @Arg(2) int frameIndex) {
+        int replacement = ownCache.findPatchedFrame(_this, groupIndex, frameIndex);
+        if (replacement != 0) {
+            putDword(esp - 8, replacement); // ecx
+            putDword(esp + 8, 0); // arg 1
+            putDword(esp + 12, 0); // arg 2
+        }
+    }
 }
