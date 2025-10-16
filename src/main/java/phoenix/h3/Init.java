@@ -20,7 +20,8 @@ public class Init {
         ArtifactRepository artifacts = ArtifactRepository.withCustomArtifacts(
                 new TokenOfCoward(),
                 new DragonSlayerShield(),
-                new RingOfPhoenix()
+                new RingOfPhoenix(),
+                new RuneOfAir()
         );
 
         CreatureBankRepository banks = new CreatureBankRepository();

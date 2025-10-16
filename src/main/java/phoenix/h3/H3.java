@@ -83,7 +83,7 @@ public class H3 {
     public static void dbg(Object... args) {
         StringBuffer buffer = new StringBuffer();
         for (Object arg : args) {
-            buffer.append(arg);
+            buffer.append(arg).append(" ");
         }
         System.out.println(buffer);
         System.out.flush();

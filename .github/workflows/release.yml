@@ -1,0 +1,63 @@
+name: Build & Release phoenix.exe
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configure Gradle cache
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build phoenixImage
+        run: ./gradlew --no-daemon phoenixImage
+
+      - name: Verify exe exists
+        run: |
+          test -f "./img/build/exe/phoenix.exe" || {
+            echo "phoenix.exe not found at ./img/build/exe/phoenix.exe" >&2
+            exit 1
+          }
+
+      - name: Package ZIP
+        run: |
+          mkdir -p release
+          zip -j release/phoenix.zip ./img/build/exe/phoenix.exe
+          ls -l release
+
+      - name: Compute tag
+        id: tag
+        shell: bash
+        run: echo "TAG=v$(date +%Y%m%d)-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          name: "Auto release ${{ env.TAG }}"
+          artifacts: "release/phoenix.zip"
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: true
+          allowUpdates: true

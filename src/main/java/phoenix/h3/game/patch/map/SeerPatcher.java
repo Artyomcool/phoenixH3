@@ -25,6 +25,9 @@ public class SeerPatcher extends Patcher.Stateless {
 
     @Upcall(base = 0x5749E0, offset = 0x316)
     public void newGameAfterSeerRead(@R(EBX) int seer, @Dword(at = EBX, offset = Seer.OFFSET_QUEST) int quest) {
+        if (quest == 0) {
+            return;
+        }
         StdString textStart = Quest.startText(quest);
         Vector<Vector<String>> tokens = CustomMarker.parseForCustomMarkerAndFixup(textStart);
         if (tokens == null) {
@@ -35,6 +38,7 @@ public class SeerPatcher extends Patcher.Stateless {
             if (line.get(0).equals("GIVE")) {
                 if (line.get(1).equals("ARTIFACT")) {
                     int id = artifacts.idOf(artifacts.artifact(line.get(2)));
+                    // TODO check or fix type of reward
                     putDword(seer + 5 + 4, id); // replace reward's artifact
                 }
             }

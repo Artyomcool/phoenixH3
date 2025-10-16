@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'com.github.artyomcool.h3resprocessor'
     id 'com.github.artyomcool.phoenixforge'
 }
 
@@ -44,6 +43,10 @@ phoenixForge {
     exeFile = externalDir.file('../Heroes3 HD.exe')
 }
 
+jar {
+    entryCompression = ZipEntryCompression.STORED
+    preserveFileTimestamps = false
+}
 
 dependencies {
 

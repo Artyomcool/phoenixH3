@@ -187,3 +187,5 @@ int __attribute__((cdecl)) __mingw_sprintf(char* dst, const char* fmt, ...) {
 int __attribute__((cdecl)) __mingw_vsnprintf(char *s, size_t n, const char *fmt, va_list ap) {
     return vsnprintf(s, n, fmt, ap);
 }
+
+void __chkstk_ms(void) {}

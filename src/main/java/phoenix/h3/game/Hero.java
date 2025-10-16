@@ -17,6 +17,10 @@ public class Hero {
     @Downcall(0x4D9460)
     public static native int hasArtifact(int hero, int artifactId);
 
+    @Thiscall
+    @Downcall(0x4E3040)
+    public static native void removeArtifact(int hero, int artifactId);
+
     public static void putPrimarySkill(int hero, int primarySkill, int value) {
         putByte(hero + OFFSET_PRIMARY_SKILLS + primarySkill, value);
     }

@@ -2,7 +2,6 @@ package phoenix.h3.game.patch;
 
 import java.util.Vector;
 
-import static phoenix.h3.H3.dbg;
 import static phoenix.h3.game.stdlib.Memory.*;
 
 public abstract class Patcher<T> {

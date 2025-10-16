@@ -25,6 +25,10 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         int onFearEvaluated(int hero);
     }
 
+    public interface CastListener {
+        void onCast(int hero, int spell, int hexId);
+    }
+
     public interface PhoenixResurrectCountEvaluator {
         int phoenixResurrectCnt(int hero, int currentAmount, int stackSize);
     }
@@ -42,6 +46,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         Vector<FightCostMultiplier> fightcostAware = new Vector<>();
         Vector<FearEvaluator> fearAware = new Vector<>();
         Vector<PhoenixResurrectCountEvaluator> phoenixResurrectCountEvaluators = new Vector<>();
+        Vector<CastListener> castListeners = new Vector<>();
 
         Vector<CustomArtifact> artifacts = repository.artifacts;
         for (CustomArtifact artifact : artifacts) {
@@ -54,6 +59,9 @@ public class CombatManagerPatcher extends Patcher.Stateless {
             if (artifact instanceof PhoenixResurrectCountEvaluator) {
                 phoenixResurrectCountEvaluators.add((PhoenixResurrectCountEvaluator) artifact);
             }
+            if (artifact instanceof CastListener) {
+                castListeners.add((CastListener) artifact);
+            }
         }
 
         if (fightcostAware.size() > 0) {
@@ -65,7 +73,11 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         }
 
         if (phoenixResurrectCountEvaluators.size() > 0) {
-            children.add(createPhoenixResuurectPatcher(phoenixResurrectCountEvaluators));
+            children.add(createPhoenixResurrectPatcher(phoenixResurrectCountEvaluators));
+        }
+
+        if (castListeners.size() > 0) {
+            children.add(createCastPatcher(castListeners));
         }
 
         return children;
@@ -128,7 +140,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
         };
     }
 
-    private Patcher<?> createPhoenixResuurectPatcher(final Vector<PhoenixResurrectCountEvaluator> delegates) {
+    private Patcher<?> createPhoenixResurrectPatcher(final Vector<PhoenixResurrectCountEvaluator> delegates) {
         return new Patcher.Stateless() {
             @Upcall(base = 0x4690E2)
             public void phoenix(@R(ESP) int esp, @R(EBX) int amount, @R(ESI) int battleStack, @Dword(at = ESI, offset = 0x60) int countAtStart) {
@@ -146,6 +158,23 @@ public class CombatManagerPatcher extends Patcher.Stateless {
 
                 if (oldAmount != amount) {
                     putDword(esp - 16, amount); // ebx
+                }
+            }
+        };
+    }
+
+    private Patcher<?> createCastPatcher(final Vector<CastListener> delegates) {
+        return new Patcher.Stateless() {
+
+            @Upcall(base = 0x5A0140)
+            public void cast(
+                    @R(ECX) int combatMgr,
+                    @Dword(at = ESP, offset = 0x08) int spellId,
+                    @Dword(at = ESP, offset = 0x0C) int hexId
+            ) {
+                int hero = CombatManager.hero(combatMgr);
+                for (CastListener delegate : delegates) {
+                    delegate.onCast(hero, spellId, hexId);
                 }
             }
         };

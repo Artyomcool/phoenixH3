@@ -52,11 +52,16 @@ public class PeTool {
         return ((b[off] & 0xFF)) | ((b[off + 1] & 0xFF) << 8);
     }
 
-    static long u32(byte[] b, int off) {
-        return ((long) (b[off] & 0xFF)) |
-                ((long) (b[off + 1] & 0xFF) << 8) |
-                ((long) (b[off + 2] & 0xFF) << 16) |
-                ((long) (b[off + 3] & 0xFF) << 24);
+    static void u16(byte[] b, int off, int patch) {
+        b[off] = (byte) (patch & 0xff);
+        b[off + 1] = (byte) ((patch >>> 8) & 0xff);
+    }
+
+    static int u32(byte[] b, int off) {
+        return ((b[off] & 0xFF)) |
+                ((b[off + 1] & 0xFF) << 8) |
+                ((b[off + 2] & 0xFF) << 16) |
+                ((b[off + 3] & 0xFF) << 24);
     }
 
     static void u32(byte[] b, int off, int patch) {

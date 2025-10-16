@@ -39,7 +39,6 @@ abstract class PhoenixForgeTask extends DefaultTask {
         byte[] loaderDll = inputLoaderDll.get().asFile.bytes
         byte[] jar = jarFile.get().asFile.bytes
 
-
         def stream = new HMap.HeroStream(game)
         def header = HMap.MapHeader.read(stream)
 

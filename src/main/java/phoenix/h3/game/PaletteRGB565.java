@@ -3,7 +3,6 @@ package phoenix.h3.game;
 import phoenix.h3.annotations.Downcall;
 import phoenix.h3.annotations.Thiscall;
 
-import static phoenix.h3.game.stdlib.Memory.malloc;
 import static phoenix.h3.game.stdlib.Memory.mallocAuto;
 
 public class PaletteRGB565 {

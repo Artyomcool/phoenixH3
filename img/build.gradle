@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    id 'com.github.artyomcool.phoenixforge'
+}
+
+group = 'com.github.artyomcool'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = "7"
+    targetCompatibility = "7"
+}
+
+phoenixImage {
+    inputDll = file("../src/main/cpp/dll.dll")
+    inputLoaderDll = file("../src/main/cpp/dll_loader.dll")
+    inputExe = file("../src/main/cpp/phoenix_image.exe")
+}
+
+dependencies {
+}

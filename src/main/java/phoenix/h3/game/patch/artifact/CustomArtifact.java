@@ -31,6 +31,7 @@ public abstract class CustomArtifact {
     public final int rarity;
 
     public final int[] bonuses = new int[4];
+    public int spell = 0;
     public int value = 0;
 
     protected CustomArtifact(String nameText, String descText, int cost, int slot, int rarity) {

@@ -25,6 +25,8 @@
                 "'-Wl,--wrap,_ZN2Os11loadLibraryEPKc'",
                 "'-Wl,--wrap,_ZN2Os9getSymbolEPvPKc'",
                 "C:/git/phoenixME/cldc/build/cygwin_i386/dist/lib/libcldc_vm.a",
+                
+                "'-Wl,--strip-all'",
                 "-x",
                 "c",
                 "div.c",
@@ -38,11 +40,88 @@
                 "c",
                 "kernel.c",
                 "-Icldc/include",
+"'-Wl,--defsym,__imp___wfullpath=1'",
+"'-Wl,--defsym,_wcschr=2'",
+"'-Wl,--defsym,__imp___errno=3'",
+"'-Wl,--defsym,__imp__FindFirstFileW=4'",
+"'-Wl,--defsym,__imp__FindClose=5'",
+"'-Wl,--defsym,_wcslen=6'",
+"'-Wl,--defsym,__imp__GetLastError=7'",
+"'-Wl,--defsym,__imp__towupper=8'",
+"'-Wl,--defsym,__imp__GetFileAttributesW=9'",
+"'-Wl,--defsym,_wcscpy=10'",
+"'-Wl,--defsym,_wcscat=11'",
+"'-Wl,--defsym,__imp___waccess=12'",
+"'-Wl,--defsym,__imp__GetFileAttributesExW=13'",
+"'-Wl,--defsym,__imp__CreateFileW=14'",
+"'-Wl,--defsym,__imp__SetFileTime=15'",
+"'-Wl,--defsym,__imp__SetFileAttributesW=16'",
+"'-Wl,--defsym,__imp__RemoveDirectoryW=17'",
+"'-Wl,--defsym,__imp__DeleteFileW=18'",
+"'-Wl,--defsym,__imp__CreateDirectoryW=19'",
+"'-Wl,--defsym,__imp__GetLogicalDrives=20'",
+"'-Wl,--defsym,__imp__GetCurrentDirectoryA=21'",
+"'-Wl,--defsym,_mbstowcs=22'",
+"'-Wl,--defsym,__imp__iswalpha=23'",
+"'-Wl,--defsym,_wcscmp=24'",
+"'-Wl,--defsym,__imp__FindNextFileW=29'",
+"'-Wl,--disable-runtime-pseudo-reloc'",
+"'-Wl,--disable-auto-import'",
+
+
             ],
             "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true
+            },
+        },
+        {
+            "label": "Build Image (MinGW i386)",
+            "type": "shell",
+            "command": "C:/msys64/mingw32/bin/i686-w64-mingw32-g++",
+            "args": [
+                "-m32",
+                "-O2",
+                "phoenix_image.cpp",
+                "-o",
+                "phoenix_image.exe",
+                
+                "-static",
+                "-static-libgcc",
+                "-static-libstdc++",
+                "-lpthread",
+
+                "-fno-exceptions",
+                "-fno-rtti",
+
+                "'-Wl,--wrap=OsFile_open'",
+                "'-Wl,--wrap=OsFile_close'",
+                "'-Wl,--wrap=OsFile_flush'",
+                "'-Wl,--wrap=OsFile_read'",
+                "'-Wl,--wrap=OsFile_write'",
+                "'-Wl,--wrap=OsFile_length'",
+                "'-Wl,--wrap=OsFile_exists'",
+                "'-Wl,--wrap=OsFile_seek'",
+                "'-Wl,--wrap=OsFile_error'",
+                "'-Wl,--wrap=OsFile_eof'",
+                "'-Wl,--wrap=OsFile_remove'",
+                "'-Wl,--wrap=OsFile_rename'",
+                "'-Wl,--wrap=main'",
+                "'-Wl,--strip-all'",
+
+                "C:/git/phoenixME/cldc/build/cygwin_i386/target/bin/cldc_vm.a",
+                "-Icldc/include",
+            ],
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "env": {
+                "PATH": "C:\\msys64\\mingw32\\bin;C:\\msys64\\usr\\bin;${env:PATH}"
+                }
             },
         },
         {

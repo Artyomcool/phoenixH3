@@ -2,7 +2,8 @@
 
 This repository uses multiple licenses:
 
-- **/src** — licensed under **GPL-2.0-only**. This code is intended for end‑user distribution.
+- **/patch** — licensed under **GPL-2.0-only**. This code is intended for end‑user (for players) distribution.
+- **/img** — licensed under **GPL-2.0-only**. This code is intended for end‑user (for mapmakers) distribution.
 - **/buildSrc** — licensed under **Apache-2.0**. This directory contains build-time tooling only and is **not** linked or distributed as part of runtime artifacts.
 
 # Dependency notice

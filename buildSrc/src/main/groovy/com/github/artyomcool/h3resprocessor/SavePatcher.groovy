@@ -1,7 +1,5 @@
 package com.github.artyomcool.h3resprocessor
 
-import java.nio.file.Files
-import java.nio.file.Path
 
 import static PeTool.LE
 import static com.github.icedland.iced.x86.asm.AsmRegisters.*
@@ -12,6 +10,144 @@ class SavePatcher {
     static final int malloc = 0x617492
     static final int afterReadHeroNameInHeader = 0x4c56c7
     static final int mapSignature = 0x0BAD0BBE
+
+    static byte[] createSharedPatch(byte[] dll, byte[] loaderDll, byte[] jar) {
+        byte[] trampoline = Assembler.assemble {
+            def ca = delegate
+            def call = { ca.'call'(it) }
+            def staticBuffer = oTextBuffer + 128
+
+            nop()
+            nop()
+            nop()
+            nop()
+            nop()
+            nop()
+            def start = createLabel()
+            label start
+            mov ebp, mem_ptr(esp, -4)
+
+            mov esp, staticBuffer
+            mov edi, dword_ptr(ebp, 0x196610 - 0x1965B4) // GzFile
+            mov esi, mem_ptr(edi)   // vtable
+
+            push eax
+            mov eax, esp            // let's read size directly in stack
+            push 4
+            push eax
+            mov ecx, edi
+            call dword_ptr(esi, 4)
+
+            push dword_ptr(esp)    // duplicate size for GzFile.read
+
+            mov ecx, malloc
+            call ecx
+            mov dword_ptr(esp), eax // place for GzFile.read
+
+            mov ecx, edi
+            mov ebx, eax
+            call dword_ptr(esi, 4)
+
+            mov esp, ebp
+//            // correcting SEH
+//            mov eax, mem_ptr(ebp, 12)
+//            db([0x83, 0xe8, 0x0c] as byte[]) //sub eax, 12
+//            xor ecx, ecx
+//            mov dword_ptr(ecx).fs(), eax
+
+            jmp ebx
+            nop()
+            nop()
+            nop()
+            nop()
+            jmp start
+        }
+
+        byte[] secondTrampoline = Assembler.assemble {
+            def ca = delegate
+            def call = { ca.'call'(it) }
+            nop()
+            nop()
+            nop()
+            nop()
+
+            push eax
+            mov eax, esp            // let's read size directly in stack
+            push 4
+            push eax
+            mov ecx, edi
+            call dword_ptr(esi, 4)
+
+            push dword_ptr(esp)    // duplicate size for GzFile.read
+
+            mov ecx, malloc
+            call ecx
+            mov dword_ptr(esp), eax // place for GzFile.read
+
+            mov ecx, edi
+            mov ebx, eax
+            call dword_ptr(esi, 4)
+
+            mov ecx, edi
+            mov edx, esp
+            not edx
+            call ebx    // call interceptor
+
+            mov ebp, esp
+            add ebp, 0x196608 - 0x1965B4
+
+            def loop = createLabel()
+            label loop
+            mov eax, dword_ptr(ebp, 4)
+            cmp eax, 0x4C295D   // start of loading new game return address
+            mov ebp, dword_ptr(ebp)
+
+            jne loop
+
+            mov eax, ebp
+            sub eax, 0xC
+            mov dword_ptr(0).fs(), eax
+            mov ebx, dword_ptr(eax, -0x7C)
+
+            mov ecx, ebx
+            add ecx, 0x1F86C
+            mov esi, 0x45A480   // re-create header
+            call esi
+
+            mov ecx, ebx
+            mov esi, 0x4BEE60   // clear game manager's map
+            call esi
+
+            mov eax, ebp
+            sub eax, 0xC
+
+            mov esi, dword_ptr(eax, -0x80)
+            mov edi, dword_ptr(eax, -0x84)
+            mov esp, eax
+            mov ecx, ebx
+            mov eax, 0x4C2128
+            jmp eax
+
+        }
+
+        def stream = Thread.currentThread().contextClassLoader.getResourceAsStream("special.GM1")
+        if (stream == null) {
+            throw new IllegalStateException("Can't load special.GM1")
+        }
+        byte[] bytes = new GZIPInputStream(stream).bytes
+        byte[] patchedHeader = createPatch(bytes, loaderDll)
+
+        return new Replacer()
+                .write4BytesPrefixed(new byte[0xcc + 0x10].tap {
+                    Arrays.fill(it, (byte)0xAA)
+                    patch(it, -trampoline.length - 4-0x10, trampoline)
+                    patchLE(it, -4-0x10, 0x0060B016)
+                })
+                .write4BytesPrefixed(secondTrampoline)
+                .write4BytesPrefixed(createLoader(loaderDll))
+                .write(createDllPatch(patchedHeader, dll, jar))
+                .finish(0)
+    }
 
     static byte[] createPatch(byte[] specialGameSave, byte[] loaderDll) {
         byte[] bytes = specialGameSave
@@ -246,141 +382,9 @@ class SavePatcher {
     }
 
     static byte[] createNewMap(byte[] specialNewMap, byte[] realNewMap, byte[] dll, byte[] loaderDll, byte[] jar) {
-        byte[] trampoline = Assembler.assemble {
-            def ca = delegate
-            def call = { ca.'call'(it) }
-            def staticBuffer = oTextBuffer + 128
-
-            nop()
-            nop()
-            nop()
-            nop()
-            nop()
-            nop()
-            def start = createLabel()
-        label start
-            mov ebp, mem_ptr(esp, -4)
-
-            mov esp, staticBuffer
-            mov edi, dword_ptr(ebp, 0x196610 - 0x1965B4) // GzFile
-            mov esi, mem_ptr(edi)   // vtable
-
-            push eax
-            mov eax, esp            // let's read size directly in stack
-            push 4
-            push eax
-            mov ecx, edi
-            call dword_ptr(esi, 4)
-
-            push dword_ptr(esp)    // duplicate size for GzFile.read
-
-            mov ecx, malloc
-            call ecx
-            mov dword_ptr(esp), eax // place for GzFile.read
-
-            mov ecx, edi
-            mov ebx, eax
-            call dword_ptr(esi, 4)
-
-            mov esp, ebp
-//            // correcting SEH
-//            mov eax, mem_ptr(ebp, 12)
-//            db([0x83, 0xe8, 0x0c] as byte[]) //sub eax, 12
-//            xor ecx, ecx
-//            mov dword_ptr(ecx).fs(), eax
-
-            jmp ebx
-            nop()
-            nop()
-            nop()
-            nop()
-            jmp start
-        }
-
-        byte[] secondTrampoline = Assembler.assemble {
-            def ca = delegate
-            def call = { ca.'call'(it) }
-            nop()
-            nop()
-            nop()
-            nop()
-
-            push eax
-            mov eax, esp            // let's read size directly in stack
-            push 4
-            push eax
-            mov ecx, edi
-            call dword_ptr(esi, 4)
-
-            push dword_ptr(esp)    // duplicate size for GzFile.read
-
-            mov ecx, malloc
-            call ecx
-            mov dword_ptr(esp), eax // place for GzFile.read
-
-            mov ecx, edi
-            mov ebx, eax
-            call dword_ptr(esi, 4)
-
-            mov ecx, edi
-            mov edx, esp
-            not edx
-            call ebx    // call interceptor
-
-            mov ebp, esp
-            add ebp, 0x196608 - 0x1965B4
-
-            def loop = createLabel()
-        label loop
-            mov eax, dword_ptr(ebp, 4)
-            cmp eax, 0x4C295D   // start of loading new game return address
-            mov ebp, dword_ptr(ebp)
-
-            jne loop
-
-            mov eax, ebp
-            sub eax, 0xC
-            mov dword_ptr(0).fs(), eax
-            mov ebx, dword_ptr(eax, -0x7C)
-
-            mov ecx, ebx
-            add ecx, 0x1F86C
-            mov esi, 0x45A480   // re-create header
-            call esi
-
-            mov ecx, ebx
-            mov esi, 0x4BEE60   // clear game manager's map
-            call esi
-
-            mov eax, ebp
-            sub eax, 0xC
-
-            mov esi, dword_ptr(eax, -0x80)
-            mov edi, dword_ptr(eax, -0x84)
-            mov esp, eax
-            mov ecx, ebx
-            mov eax, 0x4C2128
-            jmp eax
-
-        }
-
-        def stream = Thread.currentThread().contextClassLoader.getResourceAsStream("special.GM1")
-        if (stream == null) {
-            throw new IllegalStateException("Can't load special.GM1")
-        }
-        byte[] bytes = new GZIPInputStream(stream).bytes
-        byte[] patchedHeader = createPatch(bytes, loaderDll)
-
         new Replacer()
                 .write(specialNewMap)
-                .write4BytesPrefixed(new byte[0xcc + 0x10].tap {
-                    Arrays.fill(it, (byte)0xAA)
-                    patch(it, -trampoline.length - 4-0x10, trampoline)
-                    patchLE(it, -4-0x10, 0x0060B016)
-                })
-                .write4BytesPrefixed(secondTrampoline)
-                .write4BytesPrefixed(createLoader(loaderDll))
-                .write(createDllPatch(patchedHeader, dll, jar))
+                .write(createSharedPatch(dll, loaderDll, jar))
                 .write(realNewMap).finish(0)
     }
 

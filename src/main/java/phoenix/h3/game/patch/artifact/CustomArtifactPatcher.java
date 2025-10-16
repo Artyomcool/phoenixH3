@@ -1,5 +1,6 @@
 package phoenix.h3.game.patch.artifact;
 
+import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.Def;
@@ -35,6 +36,15 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
         }
         patchArtifactsDef(artifactDef, defsOffsets);
         patchArtifactsTable();
+    }
+
+    @Upcall(base = 0x4D97C1)
+    public void onSpellMaskEvaluate(@R(EBP) int ebp, @Dword(at = EBP, offset = -4) int artId) {
+        CustomArtifact artifact = artifacts.artifact(artId);
+        if (artifact != null && artifact.spell != 0) {
+            int result = ebp - 0x1C;
+            putByte(result + artifact.spell / 8, 1 << (artifact.spell % 8));
+        }
     }
 
     // todo move to hero patcher
@@ -153,7 +163,7 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
             artifactRecord[4] = descOffset;
             artifactRecord[5] = -1; // todo artifact.composite;
             artifactRecord[6] = -1; // todo artifact.part;
-            artifactRecord[7] = 0;  // todo disabled + spell + paddings
+            artifactRecord[7] = artifact.spell << 8;  // todo disabled + spell
             putArray(newTable + oldArtifactsSize + artifactRecordSize * i, artifactRecord, 0, artifactRecordSize);
         }
 

@@ -50,9 +50,11 @@ public class Def extends Resource {
         byte[] buf = new byte[s.available()];
         int pos = 0;
         while (true) {
-            if (s.read(buf, pos, buf.length - pos) == -1) {
+            int read = s.read(buf, pos, buf.length - pos);
+            if (read == -1) {
                 break;
             }
+            pos += read;
         }
 
         s.close();

@@ -411,6 +411,59 @@ void* __imp__stat32  = (void*)&_stat32;
 void* __imp___stat32 = (void*)&_stat32;
 void* _imp___stat32 = (void*)&_stat32;
 
-/* ---------------- End of memfs_all.c ---------------- */
+static size_t w2a_copy(const wchar_t* ws, char* out, size_t outcap) {
+    if (!outcap) return 0;
+    size_t i = 0;
+    if (ws) {
+        for (; ws[i] && i + 1 < outcap; ++i) {
+            unsigned int u = (unsigned int)ws[i];
+            out[i] = (char)(u & 0xFF);        /* тупо режем до 1 байта */
+        }
+    }
+    out[i] = 0;
+    return i;
+}
+
+/* wide fopen -> narrow fopen */
+FILE* _wfopen(const wchar_t* wfilename, const wchar_t* wmode) {
+    char filename[MEMFS_NAME_MAX];
+    char modebuf[8];
+    w2a_copy(wfilename, filename, sizeof(filename));
+    w2a_copy(wmode,     modebuf,  sizeof(modebuf));
+    return fopen(filename, modebuf);
+}
+
+/* wide remove/rename -> narrow remove/rename */
+int _wremove(const wchar_t* wpath) {
+    char path[MEMFS_NAME_MAX];
+    w2a_copy(wpath, path, sizeof(path));
+    return remove(path);
+}
+
+int _wrename(const wchar_t* woldp, const wchar_t* wnewp) {
+    char oldp[MEMFS_NAME_MAX];
+    char newp[MEMFS_NAME_MAX];
+    w2a_copy(woldp, oldp, sizeof(oldp));
+    w2a_copy(wnewp, newp, sizeof(newp));
+    return rename(oldp, newp);
+}
+
+/* wide __wstat32 -> narrow _stat32 */
+int __wstat32(const wchar_t* wpath, struct _stat32* st) {
+    char path[MEMFS_NAME_MAX];
+    w2a_copy(wpath, path, sizeof(path));
+    return _stat32(path, st);
+}
+
+void* __imp___wfopen  = (void*)&_wfopen;
+void* __imp___wremove = (void*)&_wremove;
+void* __imp___wrename = (void*)&_wrename;
+void* __imp___wstat32 = (void*)&__wstat32;
+void* _imp___wfopen  = (void*)&_wfopen;
+void* _imp___wremove = (void*)&_wremove;
+void* _imp___wrename = (void*)&_wrename;
+void* _imp___wstat32 = (void*)&__wstat32;
+
+    /* ---------------- End of memfs_all.c ---------------- */
 
 
