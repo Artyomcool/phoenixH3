@@ -31,6 +31,10 @@ jobs:
       - name: Configure Gradle cache
         uses: gradle/gradle-build-action@v2
 
+      - name: Fix gradlew permissions
+        run: |
+          chmod +x ./gradlew
+
       - name: Build phoenixImage
         run: ./gradlew --no-daemon phoenixImage
 
