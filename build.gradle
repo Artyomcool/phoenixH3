@@ -15,32 +15,35 @@ java {
     targetCompatibility = "7"
 }
 
-phoenixForge {
-    def pfFile = rootProject.file('phoenix.local.properties')
-    def pfProps = new Properties()
+def IS_CI = (System.getenv('CI') ?: System.getenv('GITHUB_ACTIONS'))?.toBoolean()
+if (!IS_CI) {
+    phoenixForge {
+        def pfFile = rootProject.file('phoenix.local.properties')
+        def pfProps = new Properties()
 
-    if (!pfFile.exists()) {
-        pfFile.text = """
+        if (!pfFile.exists()) {
+            pfFile.text = """
                     # Fill with correct values and uncomment next lines (remove #)
                     #externalDir=C:/path/to/HoMM 3 Complete/Maps
                     #map=A Viking We Shall Go.h3m
                     """.stripIndent()
-        println "Created ${pfFile.absolutePath}. Edit paths for your machine."
+            println "Created ${pfFile.absolutePath}. Edit paths for your machine."
+        }
+
+        pfFile.withInputStream { pfProps.load(it) }
+
+        def extDirStr = pfProps.getProperty('externalDir')
+        if (extDirStr == null) {
+            throw new IllegalStateException("Pls, edit ${pfFile.absolutePath}")
+        }
+        externalDir = layout.projectDirectory.dir(extDirStr)
+        map = externalDir.file(pfProps.getProperty('map'))
+
+        inputDll = file("src/main/cpp/dll.dll")
+        inputLoaderDll = file("src/main/cpp/dll_loader.dll")
+        outputFile = externalDir.file('_______XXX.h3m')
+        exeFile = externalDir.file('../Heroes3 HD.exe')
     }
-
-    pfFile.withInputStream { pfProps.load(it) }
-
-    def extDirStr = pfProps.getProperty('externalDir')
-    if (extDirStr == null) {
-        throw new IllegalStateException("Pls, edit ${pfFile.absolutePath}")
-    }
-    externalDir = layout.projectDirectory.dir(extDirStr)
-    map = externalDir.file(pfProps.getProperty('map'))
-
-    inputDll = file("src/main/cpp/dll.dll")
-    inputLoaderDll = file("src/main/cpp/dll_loader.dll")
-    outputFile = externalDir.file('_______XXX.h3m')
-    exeFile = externalDir.file('../Heroes3 HD.exe')
 }
 
 jar {
