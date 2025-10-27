@@ -38,6 +38,5 @@ public class Memory {
     public static native void putByte(int address, int value);
     public static native void putDword(int address, int value);
     public static native void putArray(int address, Object array, int from, int length);
-    public static native String cstrAt(int address, int maxLength);
-    public static native void putCstr(int address, String text);
+    public static native void putCstr(int address, byte[] text);
 }

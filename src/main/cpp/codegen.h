@@ -3,6 +3,8 @@
 #include "jni.h"
 #include "annotations.h"
 
+extern "C"  void DBG(const char* format, ...);
+
 namespace codegen {
 
 using namespace annotations;
@@ -63,13 +65,12 @@ void* make_generated_function(int target_address, int argc, int type, void* push
     return (void*)c.p;
 }
 
-inline int  load_u32(const void* a)                 { return *(const int*)a; }
+inline unsigned int  load_u32(const void* a)                 { return *(const unsigned int*)a; }
 inline void* arg_addr(int regs_end, int at)         { char* b=(char*)regs_end; return b + at * 4 + 36; }
 inline void* reg_addr(int regs_end, int at)         { char* b=(char*)regs_end; return b + at * 4; }
 inline void* dword_addr(int regs_end, int at, int off) {
     if (at == -1) return (void*)(unsigned int)off;
-    unsigned int base = *(unsigned int*)reg_addr(regs_end, at);
-    return (void*)(base + (unsigned int)off);
+    return (void*)(load_u32(reg_addr(regs_end, at)) + off);
 }
 
 extern "C" void bind_entry_int(jobject entry, int i, jint v);
@@ -78,6 +79,7 @@ extern "C" void bind_entry_str(jobject entry, int i, const char* ptr, int len);
 extern "C" jobject new_entry_activation_api(JNIEnv* jni, jclass clazz, int method_index);
 extern "C" JNIEnv _jni_env;
 
+extern "C" char* className(jclass clazz);
 jobject __stdcall create_entry_with_this(jobject v, int method) {
     _jni_env.PushLocalFrame(2);
     

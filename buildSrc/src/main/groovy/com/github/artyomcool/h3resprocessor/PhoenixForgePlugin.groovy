@@ -13,13 +13,26 @@ class PhoenixForgePlugin implements Plugin<Project> {
         def img = project.extensions.create('phoenixImage', PhoenixImageExtension, project.objects)
 
         if (project == project.rootProject) {
+            def preverify = project.tasks.register('preverify', PreverifyTask) { task ->
+                def jar = project.tasks.named('jar', Jar)
+                task.inputJar.set(jar.flatMap { it.archiveFile })
+                task.outputJar.convention(project.layout.file(
+                        inputJar.map { rf ->
+                            def inFile = rf.asFile
+                            def name = inFile.name
+                            def base = name.endsWith(".jar") ? name[0..-5] : name
+                            new File(inFile.parentFile, "${base}-preverified.jar")
+                        }
+                ))
+                task.dependsOn(jar)
+            }
+
             def forge = project.tasks.register('phoenixForge', PhoenixForgeTask) { task ->
                 task.group = 'build'
                 task.description = 'Pack Dll and JAR into H3 map'
 
-                def jarTask = project.tasks.named('jar', Jar)
-                task.dependsOn(jarTask)
-                task.jarFile.set(jarTask.flatMap { it.archiveFile })
+                task.dependsOn(preverify)
+                task.jarFile.set(preverify.flatMap { it.outputJar })
                 task.map.set(ext.map)
                 task.inputDll.set(ext.inputDll)
                 task.inputLoaderDll.set(ext.inputLoaderDll)
@@ -55,9 +68,9 @@ class PhoenixForgePlugin implements Plugin<Project> {
                         t.inputDll.set(img.inputDll)
                         t.inputLoaderDll.set(img.inputLoaderDll)
 
-                        def jarTask = project.rootProject.tasks.named('jar', Jar)
+                        def jarTask = project.rootProject.tasks.named('preverify', PreverifyTask)
                         t.dependsOn(jarTask)
-                        t.jarFile.set(jarTask.flatMap { it.archiveFile })
+                        t.jarFile.set(jarTask.flatMap { it.outputJar })
 
                         t.outputFile.set(img.resGen.file("patch.dat"))
                     })

@@ -9,7 +9,7 @@ import java.util.Vector;
 import static phoenix.h3.game.stdlib.Memory.mallocAuto;
 import static phoenix.h3.game.stdlib.Memory.putCstr;
 
-public class CreatureBankPatcher extends Patcher<Vector<String>> {
+public class CreatureBankPatcher extends Patcher<Vector<byte[]>> {
 
     private final CreatureBankRepository banks;
 
@@ -18,21 +18,21 @@ public class CreatureBankPatcher extends Patcher<Vector<String>> {
     }
 
     @Override
-    protected Vector<String> createInitialSaveData() {
-        return banks.finish();
+    protected Vector<byte[]> createInitialSaveData() {
+        return banks.finishCreatureBanks();
     }
 
     @Override
-    protected void onNewGameStarted(Vector<String> names) {
+    protected void onNewGameStarted(Vector<byte[]> names) {
         patchCrBankTable();
     }
 
     @Override
-    protected void onSaveGameLoaded(Vector<String> names) {
-        for (String name : names) {
-            banks.index(name);
+    protected void onSaveGameLoaded(Vector<byte[]> names) {
+        for (byte[] name : names) {
+            banks.indexCreatureBank(name);
         }
-        banks.finish();
+        banks.finishCreatureBanks();
         patchCrBankTable();
     }
 
@@ -45,10 +45,10 @@ public class CreatureBankPatcher extends Patcher<Vector<String>> {
         int newFrameArray = patchArray(ptrCrBankTable, oldSize, (oldCount + savedData.size()) * recordSize);
 
         int ptr = newFrameArray + oldSize;
-        for (String name : savedData) {
-            int cstr = mallocAuto(name.length() + 1);
+        for (byte[] name : savedData) {
+            int cstr = mallocAuto(name.length + 1);
             putCstr(cstr, name);
-            StdString.put(ptr, cstr, name.length());
+            StdString.put(ptr, cstr, name.length);
             ptr += recordSize;
         }
     }

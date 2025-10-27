@@ -47,7 +47,7 @@ public class StdVector {
         int oldSize = dataEndPtr - dataPtr;
         int newSize = oldSize + sizeInBytes;
         int newDataPtr = malloc(newSize);
-        memcpy(newDataPtr, dataCapacityPtr, oldSize);
+        memcpy(newDataPtr, dataPtr, oldSize);
         free(dataPtr);
         putDword(vector + OFFSET_DATA_PTR, newDataPtr);
         putDword(vector + OFFSET_DATA_END_PTR, newDataPtr + newSize);

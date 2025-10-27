@@ -35,7 +35,7 @@ public class Def extends Resource {
     public static native int getByName(int name);
 
     public static int loadFromJar(String defName) {
-        InputStream stream = Def.class.getResourceAsStream("/" + defName);
+        InputStream stream = Runtime.getRuntime().getClass().getResourceAsStream("/" + defName);
         if (stream == null) {
             throw new IllegalArgumentException(defName + " not found");
         }
@@ -66,7 +66,7 @@ public class Def extends Resource {
         int groupsCount = stream.nextIntLE();
 
         int tmpBuffer = malloc(name.length() + 1);
-        putCstr(tmpBuffer, name);
+        putCstr(tmpBuffer, name.getBytes());
         int def = Def.createNew(tmpBuffer, type, width, height);
         free(tmpBuffer);
         putDword(def + OFFSET_REF_COUNT, Integer.MAX_VALUE / 2); // "infinite" ref count

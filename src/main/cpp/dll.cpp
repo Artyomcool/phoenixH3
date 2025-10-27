@@ -241,11 +241,11 @@ int build_trampoline(void* handler, Trampoline* tramp, int data, bool before) {
         *d++ = 0x60;                               // pushad
         *d++ = 0x89; *d++ = 0xe2;                  // mov edx, esp
         *d++ = 0xB9; *d++ = *data_ptr++; *d++ = *data_ptr++; *d++ = *data_ptr++; *d++ = *data_ptr++; // mov ecx, imm
+        *d++ = 0x6A; *d++ = 0x00;                  // push 0
         write_call_rel32(d, handler); d += 5;
+        *d++ = 0x58;                               // pop eax
         *d++ = 0x85; *d++ = 0xC0;                  // test eax, eax
-        *d++ = 0x74; *d++ = 0x0F;                  // je target  (skip 15 bytes on nonzero path)
-
-        *d++ = 0x89; *d++ = 0x44; *d++ = 0x24; *d++ = 0x0C;  // mov dword ptr [esp+0x0C], eax   (ignored part of pushad)
+        *d++ = 0x74; *d++ = 0x0B;                  // je target  (skip 11 bytes on nonzero path)
 
         *d++ = 0x61;                                // popad
         *d++ = 0x9D;                                // popfd
@@ -253,7 +253,7 @@ int build_trampoline(void* handler, Trampoline* tramp, int data, bool before) {
         *d++ = 0x03; *d++ = 0x64; *d++ = 0x24; *d++ = 0xE8;  // add esp, [esp - 0x18]
         write_jmp_rel32(d, (UINT8*)tramp->src + tramp->orig_len); d += 5;
 
-        // target (delta == 0):
+        // target (eax == 0):
         *d++ = 0x61;                                // popad
         *d++ = 0x9D;                                // popfd
     }
@@ -487,7 +487,6 @@ void SodSuperPatchEntryPoint(void* all_data_pos, PushadRegs* registers) {
     memfs_add_ro(path, jar, patch_offset - jar_offset);
 
     JVM_SetConfig(JVM_CONFIG_SLAVE_MODE, KNI_TRUE);
-    JVM_SetUseVerifier(false);
     JVM_Initialize();
     JVM_Start(cp, "phoenix.h3.H3", 0, NULL);
 
@@ -496,22 +495,25 @@ void SodSuperPatchEntryPoint(void* all_data_pos, PushadRegs* registers) {
         if (r == -2) {
             DBG("AFTER MAIN FINISHED??");
             JVM_CleanUp();
-            break;
+            return;
         }
         if (r == -1) {
             DBG("Can't make upcall, it's waiting for something))");
             JVM_CleanUp();
-            break;
+            return;
         }
         if (r > 0) {
             DBG("Sleep in upcall? Nope, I don't think so! %x", r);
             JVM_CleanUp();
-            break;
+            return;
         }
     }
-    _jni_env.PushLocalFrame(1);
-    h3Class = _jni_env.NewGlobalRef(_jni_env.FindClass("phoenix/h3/H3"));
-    _jni_env.PopLocalFrame(NULL);
+
+    KNI_StartHandles(1);
+    KNI_DeclareHandle(h3);
+    KNI_FindClass("phoenix/h3/H3", h3);
+    h3Class = _jni_env.NewGlobalRef(h3);
+    KNI_EndHandles();
 }
 
 // __cdecl: caller restores ESP
@@ -580,10 +582,10 @@ void cleanup() {
 
 __attribute__((__fastcall__))
 int JVMPatchHook(int data, int stack_pointer) {
-    _jni_env.PushLocalFrame(32);
+    _jni_env.PushLocalFrame(8);
     bool hasLoop = upcall == leftOnUpcall;
     int u = upcall++;
-    
+
     _jni_env.SetStaticIntField(h3Class, _jni_env.GetStaticFieldID(h3Class, "depth", "I"), upcall);
     if (!hasLoop) {
         int method = activation_method_index(h3Class, "loop", "()V");
@@ -595,8 +597,7 @@ int JVMPatchHook(int data, int stack_pointer) {
     jobject entry = new_entry_activation_api(&_jni_env, h3Class, method);
     bind_entry_int(entry, 0, u);
     invoke_entry(entry);}
-    
-    
+
     {
         auto fn = (codegen::CreateEntryFunc)(void*)data;
         jobject entry = fn(stack_pointer);
@@ -605,10 +606,12 @@ int JVMPatchHook(int data, int stack_pointer) {
 
     while (upcall != u) {
         if (DONE) {
+            _jni_env.PopLocalFrame(NULL);
             return 0;
         }
         jlong r = JVM_TimeSlice();
         if (DONE) {
+            _jni_env.PopLocalFrame(NULL);
             return 0;
         }
         if (downcall_address != -1) {
@@ -643,16 +646,19 @@ int JVMPatchHook(int data, int stack_pointer) {
             continue;
         }
         if (r == -2) {
+            _jni_env.PopLocalFrame(NULL);
             DBG("AFTER MAIN FINISHED??");
             cleanup();
             return 0;
         }
         if (r == -1) {
+            _jni_env.PopLocalFrame(NULL);
             DBG("Can't make upcall, it's waiting for something))");
             cleanup();
             return 0;
         }
         if (r > 0) {
+            _jni_env.PopLocalFrame(NULL);
             DBG("Sleep in upcall? Nope, I don't think so! %x", r);
             cleanup();
             return 0;
@@ -807,44 +813,19 @@ KNIDECL(Memory_putArray) {
     KNI_ReturnVoid();
 }
 
-KNIEXPORT KNI_RETURNTYPE_OBJECT
-KNIDECL(Memory_cstrAt) {
-    KNI_StartHandles(1);
-    KNI_DeclareHandle(retStr);
-    jint address = KNI_GetParameterAsInt(1);
-    jint maxLength = KNI_GetParameterAsInt(2);
-    const char* src = (const char*)(intptr_t)address;
-    jint n = 0;
-    while (n < maxLength && src[n] != 0) ++n;
-    char* buf = (char*)malloc((size_t)n + 1);
-    if (buf) {
-        memcpy(buf, src, (size_t)n);
-        buf[n] = 0;
-        KNI_NewStringUTF(buf, retStr);
-        free(buf);
-    } else {
-        KNI_NewStringUTF("", retStr);
-    }
-    KNI_EndHandlesAndReturnObject(retStr);
-}
-
 KNIEXPORT KNI_RETURNTYPE_VOID
 KNIDECL(Memory_putCstr) {
     KNI_StartHandles(1);
     KNI_DeclareHandle(text);
 
     jint address = KNI_GetParameterAsInt(1);
-    KNI_GetParameterAsObject(2, text);
+    KNI_GetParameterAsObject(2, text);  // byte[]
+    jsize len = KNI_GetArrayLength(text);
 
-    jsize u16len = KNI_GetStringLength(text);
-    jchar* jbuf = (jchar*)malloc((size_t)u16len * sizeof(jchar));
-    if (jbuf) {
-        KNI_GetStringRegion(text, 0, u16len, jbuf);
-        char* dst = (char*)(intptr_t)address;
-        for (jsize i = 0; i < u16len; ++i) dst[i] = (char)(jbuf[i] & 0x7F);
-        dst[u16len] = '\0';
-        free(jbuf);
-    }
+    void* from = array_start_address(text);
+    void* to = (void*)address;
+    memcpy(to, from, len);
+    ((char*)to)[len] = 0;
 
     KNI_EndHandles();
     KNI_ReturnVoid();
@@ -941,43 +922,35 @@ int __stdcall push_downcall(int target_address, int argc, int type) {
 }
 
 void* downcallFor(const char* class_sig, const char* method_name) {
-    _jni_env.PushLocalFrame(8);
+    void* r = 0;;
+    KNI_StartHandles(1);
+    KNI_DeclareHandle(clazz);
+    KNI_FindClass(class_sig, clazz);
 
-    jclass clazz = _jni_env.FindClass(class_sig);
-    if (!clazz) {
-        _jni_env.PopLocalFrame(NULL);
-        return 0;
+    if (clazz) {
+        _jni_env.PushLocalFrame(8);
+        int method_index = first_method_index(clazz, method_name);
+        jobjectArray annotations = annotations_for_method(clazz, method_index);
+        if (annotations) {
+            jbyteArray method_annotations = _jni_env.GetObjectArrayElement(annotations, 0);
+            if (method_annotations) {
+                int size = _jni_env.GetArrayLength(method_annotations);
+                unsigned char* data = new unsigned char[size];
+                _jni_env.GetByteArrayRegion(method_annotations, 0, size, (jbyte*)data);
+                annotations::DowncallAnn downcall;
+                bool hasDowncall = annotations::parseDowncallAnnotation(clazz, data, size, downcall);
+                delete[] data;
+
+                if (hasDowncall) {
+                    int argc = methods_args_count(clazz, method_index);
+                    r = codegen::make_generated_function(downcall.value, argc, downcall.cc, (void*)&push_downcall);
+                }
+            }
+        }
+        _jni_env.PopLocalFrame(NULL);    
     }
-
-    int method_index = first_method_index(clazz, method_name);
-    jobjectArray annotations = annotations_for_method(clazz, method_index);
-    if (!annotations) {
-        _jni_env.PopLocalFrame(NULL);
-        return 0;
-    }
-
-    jbyteArray method_annotations = _jni_env.GetObjectArrayElement(annotations, 0);
-    if (!method_annotations) {
-        _jni_env.PopLocalFrame(NULL);
-        return 0;
-    }
-
-    int size = _jni_env.GetArrayLength(method_annotations);
-    unsigned char* data = new unsigned char[size];
-    _jni_env.GetByteArrayRegion(method_annotations, 0, size, (jbyte*)data);
-    annotations::DowncallAnn downcall;
-    bool hasDowncall = annotations::parseDowncallAnnotation(clazz, data, size, downcall);
-    delete[] data;
-
-    if (!hasDowncall) {
-        _jni_env.PopLocalFrame(NULL);
-        return 0;
-    }
-
-    int argc = methods_args_count(clazz, method_index);
-
-    _jni_env.PopLocalFrame(NULL);
-    return codegen::make_generated_function(downcall.value, argc, downcall.cc, (void*)&push_downcall);
+    KNI_EndHandles();
+    return r;
 }
 
 static int hex4(const char* p) {
@@ -999,7 +972,6 @@ static int hex4(const char* p) {
 #define NATIVE_CLASS_END \
     }
 
-// одна строка метода (важно: strcmp(...) == 0)
 #define NATIVE_METHOD(JC, name) \
     if (strcmp(method_name, #name) == 0) return (void*)&Java_##JC##_##name;
 
@@ -1079,7 +1051,6 @@ extern "C" void* addressOfFunc(const char* name) {
         NATIVE_METHOD(Memory, putByte)
         NATIVE_METHOD(Memory, putDword)
         NATIVE_METHOD(Memory, putArray)
-        NATIVE_METHOD(Memory, cstrAt)
         NATIVE_METHOD(Memory, putCstr)
     NATIVE_CLASS_END
 

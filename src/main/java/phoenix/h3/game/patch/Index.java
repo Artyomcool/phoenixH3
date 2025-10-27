@@ -1,5 +1,7 @@
 package phoenix.h3.game.patch;
 
+import phoenix.h3.game.common.Func;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -24,24 +26,32 @@ public class Index<T> {
     }
 
     public Vector<T> finish() {
+        return finishAndTransform(Func.<T, T>identity());
+    }
+
+    protected <Q> Vector<Q> finishAndTransform(Func<T, Q> f) {
         if (index == null) {
             throw new IllegalStateException("Already finished");
         }
 
         int size = index.size();
 
-        Vector<T> r = new Vector<>(size);
+        Vector<Q> r = new Vector<>(size);
         r.setSize(size);
 
         Enumeration<T> keys = index.keys();
         Enumeration<Integer> values = index.elements();
 
         while (keys.hasMoreElements()) {
-            r.set(values.nextElement(), keys.nextElement());
+            r.set(values.nextElement(), f.f(keys.nextElement()));
         }
 
         index = null;
         return r;
+    }
+
+    public int nextIndex() {
+        return index.size();
     }
 
 }

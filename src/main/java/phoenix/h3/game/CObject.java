@@ -14,4 +14,8 @@ public class CObject {
     public static int type(int object) {
         return dwordAt(object + OFFSET_TYPE_ID) & 0xffff;
     }
+
+    public static int coords(int object) {
+        return dwordAt(object + OFFSET_X);
+    }
 }

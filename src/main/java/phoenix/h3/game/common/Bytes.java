@@ -30,4 +30,10 @@ public class Bytes {
         return -1;
     }
 
+    public static byte[] copy(byte[] array, int from, int length) {
+        byte[] r = new byte[length];
+        System.arraycopy(array, from, r, 0, length);
+        return r;
+    }
+
 }

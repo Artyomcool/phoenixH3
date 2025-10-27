@@ -1,5 +1,6 @@
 package phoenix.h3.game.patch.map.replacer;
 
+import phoenix.h3.game.common.CustomMarker;
 import phoenix.h3.game.patch.Patcher;
 
 public abstract class Replacer {
@@ -18,7 +19,7 @@ public abstract class Replacer {
         this.size = size;
     }
 
-    public abstract void performReplace(String[] tokens, int x, int y, int z, int cell, int typeAndSubtype, int event);
+    public abstract void performReplace(CustomMarker.Value info, int x, int y, int z, int cell, int typeAndSubtype, int event);
 
     public Patcher asPatcher() {
         return null;

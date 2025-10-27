@@ -14,8 +14,8 @@ class PhoenixForgeExtension {
     final RegularFileProperty inputLoaderDll
     final RegularFileProperty outputFile
     final RegularFileProperty exeFile
-    final DirectoryProperty raw;
-    final DirectoryProperty resGen;
+    final DirectoryProperty raw
+    final DirectoryProperty resGen
 
     @Inject
     PhoenixForgeExtension(Project project, ObjectFactory objects) {
@@ -26,8 +26,8 @@ class PhoenixForgeExtension {
         this.outputFile = objects.fileProperty()
         this.exeFile = objects.fileProperty()
         this.raw = objects.directoryProperty()
-                .convention(project.getLayout().getProjectDirectory().dir("src/main/raw"));
+                .convention(project.getLayout().getProjectDirectory().dir("src/main/raw"))
         this.resGen = objects.directoryProperty()
-                .convention(project.getLayout().getBuildDirectory().dir("generated/resources"));
+                .convention(project.getLayout().getBuildDirectory().dir("generated/resources"))
     }
 }

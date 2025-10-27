@@ -1,6 +1,5 @@
 package phoenix.h3.game.patch.artifact;
 
-import phoenix.h3.H3;
 import phoenix.h3.annotations.Dword;
 import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
@@ -8,6 +7,7 @@ import phoenix.h3.game.Def;
 import phoenix.h3.game.Hero;
 import phoenix.h3.game.patch.OwnResourceCache;
 import phoenix.h3.game.patch.Patcher;
+import phoenix.h3.game.stdlib.Stack;
 
 import java.util.Vector;
 
@@ -53,7 +53,7 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
     public void onAddArtifactBonusesToHero(@R(ESP) int esp, @R(EDI) int hero, @R(EAX) int primarySkill, @R(ECX) int artifactId) {
         if (artifactId >= FIRST_CUSTOM_ARTIFACT_ID) {
             // disable original bonuses
-            putDword(esp - 8, 0); // ecx
+            Stack.putEcx(esp, 0);
             // use our bonus
             int[] bonuses = artifacts.artifact(artifactId).bonuses;
             Hero.putPrimarySkill(hero, primarySkill, Hero.getPrimarySkill(hero, primarySkill) + bonuses[primarySkill]);
@@ -65,7 +65,7 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
     public void onRemoveArtifactBonusesFromHero(@R(ESP) int esp, @R(EDI) int hero, @R(ESI) int artifactId) {
         if (artifactId >= FIRST_CUSTOM_ARTIFACT_ID) {
             // disable original bonuses
-            putDword(esp - 28, 0); // esi
+            Stack.putEsi(esp, 0);
             // use our bonus
             int[] bonuses = artifacts.artifact(artifactId).bonuses;
             for (int i = 0; i < 4; i++) {
@@ -81,7 +81,7 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
         lastArtifactId = artifactId;
         if (artifactId >= FIRST_CUSTOM_ARTIFACT_ID) {
             // disable original value
-            putDword(esp - 8, -1); // ecx
+            Stack.putEcx(esp, -1);
         }
     }
 //  todo, clashes
@@ -95,7 +95,7 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
 
     public static int loadArtifactDef() {
         int tmpName = malloc(16);
-        putCstr(tmpName, "artifact.def");
+        putCstr(tmpName, "artifact.def".getBytes());
         int artifacts = Def.getByName(tmpName);
         free(tmpName);
         return artifacts;
@@ -155,8 +155,8 @@ public class CustomArtifactPatcher extends Patcher.Stateless {
             int bytesForDesc = artifact.descText.length() + 1;
             int nameAndDesc = mallocAuto(bytesForName + bytesForDesc);
             int descOffset = nameAndDesc + bytesForName;
-            putCstr(nameAndDesc, artifact.nameText);
-            putCstr(descOffset, artifact.descText);
+            putCstr(nameAndDesc, artifact.nameText.getBytes());
+            putCstr(descOffset, artifact.descText.getBytes());
             artifactRecord[0] = nameAndDesc;
             artifactRecord[1] = artifact.cost;
             artifactRecord[2] = artifact.slot;

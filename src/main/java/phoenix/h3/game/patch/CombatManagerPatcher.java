@@ -7,6 +7,7 @@ import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.CombatManager;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
 import phoenix.h3.game.patch.artifact.CustomArtifact;
+import phoenix.h3.game.stdlib.Stack;
 
 import java.util.Vector;
 
@@ -134,7 +135,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
                 }
 
                 if (value != Integer.MIN_VALUE) {
-                    putDword(esp - 4, value); // replace eax
+                    Stack.putEax(esp, value);
                 }
             }
 
@@ -158,7 +159,7 @@ public class CombatManagerPatcher extends Patcher.Stateless {
                 }
 
                 if (oldAmount != amount) {
-                    putDword(esp - 16, amount); // ebx
+                    Stack.putEbx(esp, amount);
                 }
             }
         };

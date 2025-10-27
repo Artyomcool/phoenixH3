@@ -1,5 +1,7 @@
 package phoenix.h3.game.patch.map.replacer;
 
+import phoenix.h3.game.common.CustomMarker;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -26,13 +28,13 @@ public class ReplacerRepository {
         }
     }
 
-    public void performReplace(String[] tokens, int x, int y, int z, int cell, int typeAndSubtype, int event) {
-        String name = tokens[0];
+    public void performReplace(CustomMarker.Value info, int x, int y, int z, int cell, int typeAndSubtype, int event) {
+        String name = info.ascii("name");
         Replacer replacer = replacers.get(name);
         if (replacer == null) {
             throw new IllegalArgumentException("Unknown replacer: " + name);
         }
-        replacer.performReplace(tokens, x, y, z, cell, typeAndSubtype, event);
+        replacer.performReplace(info, x, y, z, cell, typeAndSubtype, event);
     }
 
     public Replacer[] allReplacers() {

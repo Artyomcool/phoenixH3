@@ -5,7 +5,9 @@ import phoenix.h3.annotations.R;
 import phoenix.h3.annotations.Upcall;
 import phoenix.h3.game.Hero;
 import phoenix.h3.game.NewfullMap;
-import phoenix.h3.game.patch.OwnResourceCache;
+import phoenix.h3.game.common.CustomMarker;
+import phoenix.h3.game.patch.DefReplaceRepository;
+import phoenix.h3.game.patch.Patcher;
 import phoenix.h3.game.patch.artifact.ArtifactRepository;
 import phoenix.h3.game.patch.map.crbank.CreatureBankRepository;
 
@@ -19,22 +21,22 @@ import static phoenix.h3.game.stdlib.Memory.*;
 public class PhoenixForge extends CustomBank {
 
     private final Hashtable<Integer, Boolean> phoenixCells = new Hashtable<>();
-    private Vector<Integer> cellsToRestore =  new Vector<>();
+    private Vector<Integer> cellsToRestore = new Vector<>();
 
-    public PhoenixForge(ArtifactRepository artifacts, CreatureBankRepository banks, OwnResourceCache resourceCache) {
-        super(artifacts, banks, resourceCache);
+    public PhoenixForge(ArtifactRepository artifacts, CreatureBankRepository banks, DefReplaceRepository defs) {
+        super(artifacts, banks, defs);
     }
 
     @Override
-    public void performReplace(String[] tokens, int x, int y, int z, int cell, int typeAndSubtype, int event) {
-        super.performReplace(tokens, x, y, z, cell, typeAndSubtype, event);
+    public void performReplace(CustomMarker.Value info, int x, int y, int z, int cell, int typeAndSubtype, int event) {
+        super.performReplace(info, x, y, z, cell, typeAndSubtype, event);
         phoenixCells.put(cell, Boolean.TRUE);
         cellsToRestore.add(x | y << 8 | z << 16);
     }
 
     @Override
-    public StatePatcher asPatcher() {
-        return new StatePatcher() {
+    public Patcher<Vector<Integer>> asPatcher() {
+        return new Patcher<Vector<Integer>>() {
             @Upcall(base = 0x4AC163)
             public void afterFightBeforeLevelUp(@Dword(at = EBP, offset = 0xC) int cell, @R(ECX) int hero) {
                 if (phoenixCells.containsKey(cell)) {
@@ -42,11 +44,9 @@ public class PhoenixForge extends CustomBank {
                 }
             }
 
-            @SuppressWarnings("unchecked")
             @Override
-            protected void onSaveGameLoaded(Vector<Object> objects) {
-                super.onSaveGameLoaded(objects);
-                cellsToRestore = (Vector<Integer>) objects.get(2);
+            protected void onSaveGameLoaded(Vector<Integer> objects) {
+                cellsToRestore = objects;
                 for (int coords : cellsToRestore) {
                     int cell = NewfullMap.cell(cells, size, coords & 0xff, (coords >> 8) & 0xff, coords >> 16);
                     phoenixCells.put(cell, Boolean.TRUE);
@@ -54,10 +54,8 @@ public class PhoenixForge extends CustomBank {
             }
 
             @Override
-            protected Vector<Object> createInitialSaveData() {
-                Vector<Object> initialSaveData = super.createInitialSaveData();
-                initialSaveData.add(cellsToRestore);
-                return initialSaveData;
+            protected Vector<Integer> createInitialSaveData() {
+                return cellsToRestore;
             }
         };
     }
